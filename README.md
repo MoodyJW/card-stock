@@ -1,6 +1,29 @@
 # CardStock
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 21.0.3.
+> **⚠️ PROPRIETARY SOFTWARE - ALL RIGHTS RESERVED**
+>
+> This software is made available on GitHub for **portfolio and demonstration purposes only**.
+>
+> - ❌ **Commercial use is prohibited**
+> - ❌ **Forking, copying, or modification is prohibited**
+> - ❌ **Redistribution is prohibited**
+>
+> See [LICENSE](./LICENSE) for full terms. Unauthorized use may result in legal action.
+
+---
+
+A multi-tenant SaaS inventory management system for collectible card stores.
+
+## Tech Stack
+
+- **Frontend:** Angular 21 (Signals, Standalone Components, Tailwind CSS)
+- **Mobile:** Capacitor (Android/iOS)
+- **Backend:** Supabase (PostgreSQL, Auth, RLS)
+- **DevOps:** GitHub Actions CI/CD
+
+---
+
+## Development
 
 ## Development server
 

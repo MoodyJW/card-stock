@@ -12,71 +12,80 @@
 
 ---
 
-A multi-tenant SaaS inventory management system for collectible card stores.
+A mobile-first, multi-tenant SaaS inventory management system for Pokémon card stores.
 
 ## Tech Stack
 
-- **Frontend:** Angular 21 (Signals, Standalone Components, Tailwind CSS)
-- **Mobile:** Capacitor (Android/iOS)
-- **Backend:** Supabase (PostgreSQL, Auth, RLS)
+- **Frontend:** Angular 21 (Signals, Standalone Components, Angular Material)
+- **Mobile:** Capacitor (Android/iOS) - *planned*
+- **Backend:** Supabase (PostgreSQL, Auth, Row Level Security)
+- **Testing:** Vitest, Playwright, pgTAP
 - **DevOps:** GitHub Actions CI/CD
 
 ---
 
-## Development
+## Prerequisites
 
-## Development server
+- Node.js 22+
+- npm 11+
+- [Supabase CLI](https://supabase.com/docs/guides/cli)
 
-To start a local development server, run:
+---
 
-```bash
-ng serve
-```
+## Development Setup
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
-
-## Code scaffolding
-
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+### 1. Install dependencies
 
 ```bash
-ng generate component component-name
+npm install
 ```
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+### 2. Start Supabase locally
 
 ```bash
-ng generate --help
+npx supabase start
 ```
 
-## Building
+This starts local PostgreSQL, Auth, and Studio. Access Studio at `http://localhost:54323`.
 
-To build the project run:
+### 3. Start the dev server
 
 ```bash
-ng build
+npm start
 ```
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
+App runs at `http://localhost:4200/`. Auto-reloads on file changes.
 
-## Running unit tests
+---
 
-To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use the following command:
+## Scripts
 
-```bash
-ng test
+| Command | Description |
+|---------|-------------|
+| `npm start` | Start dev server |
+| `npm run build` | Production build |
+| `npm run lint` | Run ESLint |
+| `npm run format` | Format code with Prettier |
+| `npm run test` | Run unit tests (Vitest) |
+
+---
+
+## Project Structure
+
+```
+src/app/
+├── core/           # Guards, services, models, error handling
+├── features/       # Feature modules (auth, inventory, import)
+├── shared/         # Reusable components
+└── layouts/        # Auth and main layouts
 ```
 
-## Running end-to-end tests
+See [IMPLEMENTATION_PLAN.md](./IMPLEMENTATION_PLAN.md) for full architecture details.
 
-For end-to-end (e2e) testing, run:
-
-```bash
-ng e2e
-```
-
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
+---
 
 ## Additional Resources
 
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+- [Angular CLI Reference](https://angular.dev/tools/cli)
+- [Supabase Documentation](https://supabase.com/docs)
+- [Angular Material](https://material.angular.io/)

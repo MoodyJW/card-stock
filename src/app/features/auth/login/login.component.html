@@ -1,0 +1,45 @@
+<h2 class="auth-title">Welcome back</h2>
+
+@if (error()) {
+  <p class="auth-error">{{ error() }}</p>
+}
+
+<form [formGroup]="form" (ngSubmit)="onSubmit()">
+  <mat-form-field appearance="outline">
+    <mat-label>Email</mat-label>
+    <input matInput type="email" formControlName="email" autocomplete="email" />
+    @if (form.controls.email.hasError('required')) {
+      <mat-error>Email is required</mat-error>
+    } @else if (form.controls.email.hasError('email')) {
+      <mat-error>Enter a valid email</mat-error>
+    }
+  </mat-form-field>
+
+  <mat-form-field appearance="outline">
+    <mat-label>Password</mat-label>
+    <input
+      matInput
+      [type]="hidePassword() ? 'password' : 'text'"
+      formControlName="password"
+      autocomplete="current-password"
+    />
+    <button mat-icon-button matSuffix type="button" (click)="togglePasswordVisibility()">
+      <mat-icon>{{ hidePassword() ? 'visibility_off' : 'visibility' }}</mat-icon>
+    </button>
+    @if (form.controls.password.hasError('required')) {
+      <mat-error>Password is required</mat-error>
+    }
+  </mat-form-field>
+
+  <button mat-flat-button color="primary" type="submit" [disabled]="loading()" class="submit-btn">
+    @if (loading()) {
+      <mat-spinner diameter="20" />
+    } @else {
+      Log in
+    }
+  </button>
+</form>
+
+<div class="auth-links">
+  <a routerLink="/auth/register">Don't have an account? <strong>Sign up</strong></a>
+</div>

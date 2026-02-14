@@ -1,13 +1,21 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
+import { Router } from '@angular/router';
+import { MatButtonModule } from '@angular/material/button';
+import { SupabaseService } from '../../core/services/supabase.service';
 
 @Component({
   selector: 'app-home',
   standalone: true,
+  imports: [MatButtonModule],
   template: `
     <main class="container">
       <h1>CardStock</h1>
       <p>Pokémon Trading Card Inventory</p>
       <p class="status">✓ Project foundation ready</p>
+
+      <div style="margin-top: 2rem;">
+        <button mat-stroked-button color="warn" (click)="logout()">Sign Out</button>
+      </div>
     </main>
   `,
   styles: `
@@ -34,4 +42,12 @@ import { Component } from '@angular/core';
     }
   `,
 })
-export class HomeComponent {}
+export class HomeComponent {
+  private readonly supabase = inject(SupabaseService);
+  private readonly router = inject(Router);
+
+  async logout() {
+    await this.supabase.signOut();
+    this.router.navigate(['/auth/login']);
+  }
+}

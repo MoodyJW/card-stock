@@ -52,8 +52,8 @@ describe('AuthLayoutComponent', () => {
     expect(layout).toBeTruthy();
   });
 
-  it('should have the auth-content container', () => {
-    const content = fixture.nativeElement.querySelector('.auth-content');
-    expect(content).toBeTruthy();
+  it('should have the auth-card container', () => {
+    const card = fixture.nativeElement.querySelector('.auth-card');
+    expect(card).toBeTruthy();
   });
 });

@@ -1,7 +1,7 @@
 <h2 class="auth-title">Welcome back</h2>
 
 @if (error()) {
-  <p class="auth-error">{{ error() }}</p>
+  <mat-error class="auth-error">{{ error() }}</mat-error>
 }
 
 <form [formGroup]="form" (ngSubmit)="onSubmit()">

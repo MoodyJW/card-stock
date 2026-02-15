@@ -1,0 +1,134 @@
+// Global Variables & Utilities reusing M3 tokens
+:root {
+  // Map M3 tokens to shorter semantic names if needed,
+  // but usually better to use --mat-sys-* directly.
+
+  // Custom shadows for extra depth (M3 uses elevation tokens, but we can add custom ones)
+  --card-stock-depth-1: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.18);
+  --card-stock-depth-2: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.18);
+}
+
+// Utility Classes
+.full-width {
+  width: 100%;
+}
+
+.flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.spacer {
+  flex: 1 1 auto;
+}
+
+// Text utilities using M3 tokens
+.text-primary {
+  color: var(--mat-sys-primary);
+}
+
+.text-secondary {
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.text-error {
+  color: var(--mat-sys-error);
+}
+
+// Background utilities
+.bg-surface {
+  background-color: var(--mat-sys-surface);
+}
+
+.bg-surface-variant {
+  background-color: var(--mat-sys-surface-variant);
+}
+
+// Condition Badges
+// Using hardcoded high-contrast colors for specific game states implies
+// these shouldn't necessarily drift with the theme, but should remain semantic.
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  background-color: var(--mat-sys-surface-variant); // fallback
+  border: 1px solid transparent;
+
+  &.badge-mint {
+    background-color: rgba(16, 185, 129, 0.15);
+    color: #34d399;
+    border-color: rgba(16, 185, 129, 0.3);
+  }
+
+  &.badge-nm {
+    background-color: rgba(52, 211, 153, 0.15);
+    color: #6ee7b7;
+    border-color: rgba(52, 211, 153, 0.3);
+  }
+
+  &.badge-lp {
+    background-color: rgba(251, 191, 36, 0.15);
+    color: #fcd34d;
+    border-color: rgba(251, 191, 36, 0.3);
+  }
+
+  &.badge-mp {
+    background-color: rgba(249, 115, 22, 0.15);
+    color: #fdba74;
+    border-color: rgba(249, 115, 22, 0.3);
+  }
+
+  &.badge-hp {
+    background-color: rgba(239, 68, 68, 0.15);
+    color: #fca5a5;
+    border-color: rgba(239, 68, 68, 0.3);
+  }
+
+  &.badge-dmg {
+    background-color: rgba(107, 114, 128, 0.15);
+    color: #d1d5db;
+    border-color: rgba(107, 114, 128, 0.3);
+  }
+}
+
+// Mobile-specific
+.safe-bottom {
+  padding-bottom: max(16px, env(safe-area-inset-bottom));
+}
+
+.bottom-action-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 16px;
+  padding-bottom: max(16px, env(safe-area-inset-bottom));
+
+  // Use M3 surface container for elevated bottom bars
+  background-color: var(--mat-sys-surface-container);
+  border-top: 1px solid var(--mat-sys-outline-variant);
+
+  display: flex;
+  gap: 12px;
+  z-index: 100;
+  box-shadow: var(--card-stock-depth-2);
+}
+
+.has-bottom-bar {
+  padding-bottom: 88px;
+}
+
+// Dialog overrides for mobile
+@media (max-width: 599px) {
+  .mat-mdc-dialog-container {
+    --mdc-dialog-container-shape: 0px; // remove border radius
+    max-width: 100vw !important;
+    max-height: 100dvh !important;
+  }
+}

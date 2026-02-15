@@ -1,0 +1,20 @@
+@use '@angular/material' as mat;
+
+// Material 3 theme configuration
+// Using Violet (Primary) and Cyan (Tertiary) for a high-contrast modern dark theme
+$app-theme: mat.define-theme(
+  (
+    color: (
+      primary: mat.$violet-palette,
+      tertiary: mat.$cyan-palette,
+      theme-type: dark,
+    ),
+    typography: (
+      plain-family: 'Roboto, "Helvetica Neue", sans-serif',
+      brand-family: 'Roboto, "Helvetica Neue", sans-serif',
+    ),
+    density: (
+      scale: 0,
+    ),
+  )
+);

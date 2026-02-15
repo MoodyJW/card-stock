@@ -8,7 +8,7 @@ description: Coding conventions and patterns for CardStock development
 
 1. **Mobile-first** - Touch targets ≥44px, thumb-zone-friendly layouts
 2. **RPC-first for sensitive ops** - Use SECURITY DEFINER RPCs, not direct table writes
-3. **Reactive state** - Domain services react to store context via `effect()`
+3. **Reactive state** - Domain services react to shop context via `effect()`
 
 ---
 
@@ -86,7 +86,7 @@ Use the `inject()` function, NOT constructor injection:
 // ✅ Modern pattern
 export class CardListComponent {
   private readonly inventory = inject(InventoryService);
-  private readonly storeContext = inject(StoreContextService);
+  private readonly shopContext = inject(ShopContextService);
 }
 
 // ❌ Legacy pattern
@@ -99,14 +99,14 @@ export class CardListComponent {
 
 ## State Management with Signals
 
-### StoreContextService Pattern
+### ShopContextService Pattern
 
-Domain services MUST react to store context changes via `effect()`:
+Domain services MUST react to shop context changes via `effect()`:
 
 ```typescript
 @Injectable({ providedIn: 'root' })
 export class InventoryService {
-  private readonly storeContext = inject(StoreContextService);
+  private readonly shopContext = inject(ShopContextService);
   private readonly supabase = inject(SupabaseService);
   
   private readonly _items = signal<InventoryItem[]>([]);
@@ -119,9 +119,9 @@ export class InventoryService {
   readonly count = computed(() => this._items().length);
 
   constructor() {
-    // React to store context changes - clears stale data and reloads
+    // React to shop context changes - clears stale data and reloads
     effect(() => {
-      const orgId = this.storeContext.currentOrgId();
+      const orgId = this.shopContext.currentOrgId();
       if (orgId) {
         this._items.set([]);
         this.loadItems();
@@ -165,11 +165,11 @@ These operations MUST use RPCs, NOT direct table writes:
 
 | Operation | RPC |
 |-----------|-----|
-| Create store | `create_organization` |
+| Create shop | `create_organization` |
 | Accept invite | `accept_invite` |
 | Mark card sold | `mark_card_sold` |
-| Delete store | `soft_delete_organization` |
-| Leave store | `leave_organization` |
+| Delete shop | `soft_delete_organization` |
+| Leave shop | `leave_organization` |
 
 ```typescript
 async markCardSold(inventoryId: string, price: number): Promise<void> {

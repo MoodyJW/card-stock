@@ -13,6 +13,17 @@ export const authRoutes: Routes = [
     loadComponent: () => import('./register/register.component').then(m => m.RegisterComponent),
   },
   {
+    path: 'forgot-password',
+    canActivate: [noAuthGuard],
+    loadComponent: () =>
+      import('./forgot-password/forgot-password.component').then(m => m.ForgotPasswordComponent),
+  },
+  {
+    path: 'reset-password',
+    loadComponent: () =>
+      import('./reset-password/reset-password.component').then(m => m.ResetPasswordComponent),
+  },
+  {
     path: 'confirm',
     loadComponent: () => import('./confirm/confirm.component').then(m => m.ConfirmComponent),
   },

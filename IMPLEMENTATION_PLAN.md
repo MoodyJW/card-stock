@@ -1,13 +1,13 @@
 # CardStock Implementation Plan
 
-> **Pokémon Trading Card Inventory SaaS** - Mobile-first, multi-tenant platform for card stores.
+> **Pokémon Trading Card Inventory SaaS** - Mobile-first, multi-tenant platform for card shops.
 
 ---
 
 ## Product Vision
 
-A mobile-first inventory management app for Pokémon card stores. Users can:
-- Create/join stores as owners, admins, or members
+A mobile-first inventory management app for Pokémon card shops. Users can:
+- Create/join shops as owners, admins, or members
 - Add cards manually or via Excel import
 - Track inventory with grading, pricing, and images
 - Record sales with full audit trail
@@ -19,10 +19,10 @@ A mobile-first inventory management app for Pokémon card stores. Users can:
 
 | Term | Meaning |
 |------|---------|
-| **Organization** | Database entity representing a tenant (store) |
-| **Store** | User-facing name for an organization |
-| **Profile** | User data independent of any store |
-| **Membership** | Links a user to a store with a role |
+| **Organization** | Database entity representing a tenant (shop) |
+| **Shop** | User-facing name for an organization |
+| **Profile** | User data independent of any shop |
+| **Membership** | Links a user to a shop with a role |
 
 ---
 
@@ -38,17 +38,17 @@ A mobile-first inventory management app for Pokémon card stores. Users can:
 
 ## State Management Pattern
 
-**Pattern:** Custom Signal Services with reactive store context
+**Pattern:** Custom Signal Services with reactive shop context
 
-Domain services react to store changes via `effect()` rather than being explicitly called, avoiding circular dependency issues.
+Domain services react to shop changes via `effect()` rather than being explicitly called, avoiding circular dependency issues.
 
 ```typescript
 @Injectable({ providedIn: 'root' })
-export class StoreContextService {
+export class ShopContextService {
   private readonly _currentOrgId = signal<string | null>(null);
   readonly currentOrgId = this._currentOrgId.asReadonly();
 
-  switchStore(orgId: string): void {
+  switchShop(orgId: string): void {
     this._currentOrgId.set(orgId);
     // Domain services react via effect(), not explicit calls
   }
@@ -59,10 +59,10 @@ export class InventoryService {
   private readonly _items = signal<InventoryItem[]>([]);
   readonly items = this._items.asReadonly();
 
-  constructor(private storeContext: StoreContextService) {
-    // React to store changes without circular deps
+  constructor(private shopContext: ShopContextService) {
+    // React to shop changes without circular deps
     effect(() => {
-      const orgId = this.storeContext.currentOrgId();
+      const orgId = this.shopContext.currentOrgId();
       if (orgId) {
         this._items.set([]); // Clear stale data
         this.loadInventory(orgId);
@@ -607,9 +607,9 @@ CREATE POLICY "Admins view" ON audit_log FOR SELECT USING (is_org_admin_or_owner
 | View audit log | ✅ | ✅ | ❌ | RLS |
 | Invite members | ✅ | ✅ | ❌ | RLS |
 | Change roles | ✅ | ❌ | ❌ | RLS |
-| Edit store settings | ✅ | ✅ | ❌ | RLS |
-| Soft-delete store | ✅ | ❌ | ❌ | `soft_delete_organization` RPC |
-| Leave store | ✅ | ✅ | ✅ | `leave_organization` RPC |
+| Edit shop settings | ✅ | ✅ | ❌ | RLS |
+| Soft-delete shop | ✅ | ❌ | ❌ | `soft_delete_organization` RPC |
+| Leave shop | ✅ | ✅ | ✅ | `leave_organization` RPC |
 
 ---
 
@@ -639,21 +639,23 @@ CREATE POLICY "Admins view" ON audit_log FOR SELECT USING (is_org_admin_or_owner
 | Login/Register pages | With auth layout |
 | Email confirmation | "Check your email" UI |
 | Auth guard | Redirects to login |
+| Forgot password | Email-based reset flow (Supabase `resetPasswordForEmail`) |
+| Reset password page | Token landing page → new password form (Supabase `updateUser`) |
 
-**Testing:** Unit (auth), E2E (signup flow)
+**Testing:** Unit (auth), E2E (signup flow, forgot password flow)
 
 ---
 
-### Phase 4: Store Creation & Membership
+### Phase 4: Shop Creation & Membership
 | Task | Notes |
 |------|-------|
-| Create store flow | Calls `create_organization` RPC |
-| StoreContextService | Reactive pattern with effect() |
-| Store selector | Multi-store users |
+| Create shop flow | Calls `create_organization` RPC |
+| ShopContextService | Reactive pattern with effect() |
+| Shop selector | Multi-shop users |
 | Invite creation | Admin/owner creates invite |
 | `accept_invite` RPC | Token validation + membership creation |
 | `leave_organization` RPC | With orphan prevention |
-| `soft_delete_organization` RPC | Owner-only store deletion |
+| `soft_delete_organization` RPC | Owner-only shop deletion |
 
 **Testing:** Unit (invites), Integration (invite flow)
 
@@ -663,17 +665,19 @@ CREATE POLICY "Admins view" ON audit_log FOR SELECT USING (is_org_admin_or_owner
 | Task | Notes |
 |------|-------|
 | Main layout | Bottom nav (mobile), sidebar (desktop) |
-| Route guards | Require auth + store |
+| Route guards | Require auth + shop |
 | Error handling | Toast notifications |
+| Profile / account settings | Display name, avatar, change password |
+| Logout | In nav bar, calls `signOut()` |
 
-**Testing:** Component (breakpoints), E2E (navigation)
+**Testing:** Component (breakpoints), E2E (navigation, logout)
 
 ---
 
 ### Phase 6: Inventory CRUD
 | Task | Notes |
 |------|-------|
-| Inventory service | Reactive to store context |
+| Inventory service | Reactive to shop context |
 | Card list | Table/cards, pagination |
 | Add/edit forms | All fields |
 | Mark as sold | Calls `mark_card_sold` RPC |
@@ -711,7 +715,7 @@ CREATE POLICY "Admins view" ON audit_log FOR SELECT USING (is_org_admin_or_owner
 | 11 | PWA + offline mode                                   |
 | 12 | Public storefront                                    |
 | 13 | Capacitor mobile app + camera scanning               |
-| 14 | Social logins (Google, Discord)                      |
+| 14 | Social logins (Google, Discord), MFA (TOTP)           |
 | 15 | Subscription tiers (Stripe)                          |
 | 16 | Superadmin panel                                     |
 | 17 | Marketplace                                          |
@@ -789,7 +793,7 @@ src/app/
 │   └── models/
 ├── features/
 │   ├── auth/
-│   ├── store/
+│   ├── shop/
 │   ├── dashboard/
 │   ├── inventory/
 │   └── import/
@@ -811,13 +815,13 @@ src/app/
 
 ## MVP Checklist
 - [x] Phase 1: Foundation
-- [ ] Phase 2: Database + auth layout
-- [ ] Phase 3: Authentication
-- [ ] Phase 4: Store + invites
+- [x] Phase 2: Database + auth layout
+- [ ] Phase 3: Authentication (login, register, confirm done; forgot/reset password remaining)
+- [ ] Phase 4: Shop + invites
 - [ ] Phase 5: Layout
 - [ ] Phase 6: Inventory CRUD
 - [ ] Phase 7: Import/export
 
 ---
 
-*Last updated: 2026-02-09*
+*Last updated: 2026-02-14*

@@ -1,4 +1,5 @@
-import { Injectable, signal, computed } from '@angular/core';
+import { inject, Injectable, signal, computed } from '@angular/core';
+import { Router } from '@angular/router';
 import { createClient, SupabaseClient, User, Session } from '@supabase/supabase-js';
 import { environment } from '../../../environments/environment';
 
@@ -12,6 +13,8 @@ export class SupabaseService {
   private readonly _session = signal<Session | null>(null);
   private readonly _user = signal<User | null>(null);
   private readonly _loading = signal(true);
+  private readonly _passwordRecovery = signal(false);
+  private readonly router = inject(Router);
 
   // Public readonly signals
   readonly session = this._session.asReadonly();
@@ -20,6 +23,7 @@ export class SupabaseService {
 
   // Computed state
   readonly isAuthenticated = computed(() => !!this._session());
+  readonly passwordRecovery = this._passwordRecovery.asReadonly();
 
   constructor() {
     this.supabase = createClient(environment.supabase.url, environment.supabase.anonKey);
@@ -35,9 +39,14 @@ export class SupabaseService {
       this._user.set(session?.user ?? null);
 
       // Listen for auth changes
-      this.supabase.auth.onAuthStateChange((_event, session) => {
+      this.supabase.auth.onAuthStateChange((event, session) => {
         this._session.set(session);
         this._user.set(session?.user ?? null);
+
+        if (event === 'PASSWORD_RECOVERY') {
+          this._passwordRecovery.set(true);
+          this.router.navigate(['/auth/reset-password']);
+        }
       });
     } finally {
       this._loading.set(false);
@@ -69,7 +78,17 @@ export class SupabaseService {
   }
 
   async resetPassword(email: string) {
-    return this.supabase.auth.resetPasswordForEmail(email);
+    return this.supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/auth/reset-password`,
+    });
+  }
+
+  async updatePassword(password: string) {
+    const { error } = await this.supabase.auth.updateUser({ password });
+    if (!error) {
+      this._passwordRecovery.set(false);
+    }
+    return { error };
   }
 
   // Get typed client for direct queries

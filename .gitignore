@@ -38,6 +38,15 @@ testem.log
 /typings
 __screenshots__/
 
+# Environment
+src/environments/environment.prod.ts
+
+# Playwright
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+
 # System files
 .DS_Store
 Thumbs.db

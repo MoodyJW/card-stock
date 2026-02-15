@@ -8,7 +8,7 @@ import {
   ValidationErrors,
   Validators,
 } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { Router } from '@angular/router';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
@@ -17,7 +17,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { ErrorStateMatcher } from '@angular/material/core';
 import { SupabaseService } from '../../../core/services/supabase.service';
 
-export class ConfirmPasswordMatcher implements ErrorStateMatcher {
+export class ConfirmNewPasswordMatcher implements ErrorStateMatcher {
   isErrorState(control: AbstractControl | null, form: FormGroupDirective | NgForm | null): boolean {
     const invalidCtrl = !!(control?.invalid && (control?.touched || form?.submitted));
     const group = form?.form;
@@ -30,33 +30,32 @@ export class ConfirmPasswordMatcher implements ErrorStateMatcher {
 }
 
 @Component({
-  selector: 'app-register',
+  selector: 'app-reset-password',
   imports: [
     ReactiveFormsModule,
-    RouterLink,
     MatFormFieldModule,
     MatInputModule,
     MatButtonModule,
     MatIconModule,
     MatProgressSpinnerModule,
   ],
-  templateUrl: './register.component.html',
-  styleUrl: './register.component.scss',
+  templateUrl: './reset-password.component.html',
+  styleUrl: './reset-password.component.scss',
 })
-export class RegisterComponent {
+export class ResetPasswordComponent {
   private readonly supabase = inject(SupabaseService);
+  private readonly router = inject(Router);
   private readonly fb = inject(FormBuilder);
 
   readonly loading = signal(false);
   readonly error = signal<string | null>(null);
-  readonly registered = signal(false);
+  readonly success = signal(false);
   readonly hidePassword = signal(true);
   readonly hideConfirm = signal(true);
-  readonly matcher = new ConfirmPasswordMatcher();
+  readonly matcher = new ConfirmNewPasswordMatcher();
 
   readonly form = this.fb.nonNullable.group(
     {
-      email: ['', [Validators.required, Validators.email]],
       password: ['', [Validators.required, Validators.minLength(8)]],
       confirmPassword: ['', [Validators.required]],
     },
@@ -72,16 +71,20 @@ export class RegisterComponent {
     this.loading.set(true);
     this.error.set(null);
 
-    const { email, password } = this.form.getRawValue();
-    const { error } = await this.supabase.signUp(email, password);
+    const { password } = this.form.getRawValue();
+    const { error } = await this.supabase.updatePassword(password);
+
+    this.loading.set(false);
 
     if (error) {
       this.error.set(error.message);
-      this.loading.set(false);
     } else {
-      this.registered.set(true);
-      this.loading.set(false);
+      this.success.set(true);
     }
+  }
+
+  goToHome(): void {
+    this.router.navigate(['/']);
   }
 
   togglePasswordVisibility(): void {

@@ -1,1 +1,16 @@
 @use '../auth-shared';
+
+.forgot-password-link {
+  text-align: right;
+  margin: -0.25rem 0 0.25rem;
+
+  a {
+    color: rgba(255, 255, 255, 0.6);
+    text-decoration: none;
+    font-size: 0.8rem;
+
+    &:hover {
+      color: var(--mat-sys-primary);
+    }
+  }
+}

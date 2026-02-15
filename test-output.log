@@ -1,0 +1,195 @@
+
+Running 9 tests using 4 workers
+
+[1A[2K[1/9] [chromium] › e2e/auth.spec.ts:11:9 › Auth Flow › should redirect to login when visiting home unauthenticated
+[1A[2K[2/9] [chromium] › e2e/auth.spec.ts:36:9 › Auth Flow › should show error message for non-existent user
+[1A[2K[3/9] [chromium] › e2e/auth.spec.ts:29:9 › Auth Flow › should navigate to register page
+[1A[2K[4/9] [chromium] › e2e/auth.spec.ts:17:9 › Auth Flow › should show validation error on invalid login
+[1A[2K[chromium] › e2e/auth.spec.ts:11:9 › Auth Flow › should redirect to login when visiting home unauthenticated
+PAGE LOG: [vite] connecting...
+
+[1A[2KPAGE LOG: [vite] connected.
+
+[1A[2K[chromium] › e2e/auth.spec.ts:36:9 › Auth Flow › should show error message for non-existent user
+PAGE LOG: [vite] connecting...
+
+[1A[2K[chromium] › e2e/auth.spec.ts:29:9 › Auth Flow › should navigate to register page
+PAGE LOG: [vite] connecting...
+
+[1A[2K[chromium] › e2e/auth.spec.ts:17:9 › Auth Flow › should show validation error on invalid login
+PAGE LOG: [vite] connecting...
+
+[1A[2K[chromium] › e2e/auth.spec.ts:29:9 › Auth Flow › should navigate to register page
+PAGE LOG: [vite] connected.
+
+[1A[2K[chromium] › e2e/auth.spec.ts:36:9 › Auth Flow › should show error message for non-existent user
+PAGE LOG: [vite] connected.
+
+[1A[2K[chromium] › e2e/auth.spec.ts:17:9 › Auth Flow › should show validation error on invalid login
+PAGE LOG: [vite] connected.
+
+[1A[2K[chromium] › e2e/auth.spec.ts:11:9 › Auth Flow › should redirect to login when visiting home unauthenticated
+PAGE LOG: Angular is running in development mode.
+
+[1A[2KPAGE LOG: [vite] connecting...
+
+[1A[2K[chromium] › e2e/auth.spec.ts:36:9 › Auth Flow › should show error message for non-existent user
+PAGE LOG: Angular is running in development mode.
+
+[1A[2K[chromium] › e2e/auth.spec.ts:29:9 › Auth Flow › should navigate to register page
+PAGE LOG: Angular is running in development mode.
+
+[1A[2K[chromium] › e2e/auth.spec.ts:11:9 › Auth Flow › should redirect to login when visiting home unauthenticated
+PAGE LOG: Angular is running in development mode.
+
+[1A[2K[chromium] › e2e/auth.spec.ts:17:9 › Auth Flow › should show validation error on invalid login
+PAGE LOG: Angular is running in development mode.
+
+[1A[2K[chromium] › e2e/auth.spec.ts:11:9 › Auth Flow › should redirect to login when visiting home unauthenticated
+PAGE LOG: [vite] connected.
+
+[1A[2K[chromium] › e2e/auth.spec.ts:29:9 › Auth Flow › should navigate to register page
+PAGE LOG: [vite] connecting...
+
+[1A[2K[chromium] › e2e/auth.spec.ts:36:9 › Auth Flow › should show error message for non-existent user
+PAGE LOG: [vite] connecting...
+
+[1A[2K[chromium] › e2e/auth.spec.ts:29:9 › Auth Flow › should navigate to register page
+PAGE LOG: [vite] connected.
+
+[1A[2K[chromium] › e2e/auth.spec.ts:36:9 › Auth Flow › should show error message for non-existent user
+PAGE LOG: Angular is running in development mode.
+
+[1A[2K[chromium] › e2e/auth.spec.ts:29:9 › Auth Flow › should navigate to register page
+PAGE LOG: Angular is running in development mode.
+
+[1A[2K[chromium] › e2e/auth.spec.ts:17:9 › Auth Flow › should show validation error on invalid login
+PAGE LOG: [vite] connecting...
+
+[1A[2KPAGE LOG: Angular is running in development mode.
+
+[1A[2K[chromium] › e2e/auth.spec.ts:36:9 › Auth Flow › should show error message for non-existent user
+PAGE LOG: [vite] connected.
+
+[1A[2K[chromium] › e2e/auth.spec.ts:17:9 › Auth Flow › should show validation error on invalid login
+PAGE LOG: [vite] connected.
+
+[1A[2K[5/9] [chromium] › e2e/auth.spec.ts:46:9 › Auth Flow › should show register form with all fields
+[1A[2K[chromium] › e2e/auth.spec.ts:36:9 › Auth Flow › should show error message for non-existent user
+PAGE LOG: Failed to load resource: the server responded with a status of 400 (Bad Request)
+
+[1A[2K[6/9] [chromium] › e2e/auth.spec.ts:54:9 › Auth Flow › should show validation errors on invalid registration
+[1A[2K[chromium] › e2e/auth.spec.ts:46:9 › Auth Flow › should show register form with all fields
+PAGE LOG: [vite] connecting...
+
+[1A[2KPAGE LOG: [vite] connected.
+
+[1A[2K[7/9] [chromium] › e2e/auth.spec.ts:67:9 › Auth Flow › should show password mismatch error
+[1A[2K[8/9] [chromium] › e2e/auth.spec.ts:81:9 › Auth Flow › should show check email screen after successful registration
+[1A[2KPAGE LOG: Angular is running in development mode.
+
+[1A[2K[chromium] › e2e/auth.spec.ts:54:9 › Auth Flow › should show validation errors on invalid registration
+PAGE LOG: [vite] connecting...
+
+[1A[2K[chromium] › e2e/auth.spec.ts:46:9 › Auth Flow › should show register form with all fields
+PAGE LOG: [vite] connecting...
+
+[1A[2K[chromium] › e2e/auth.spec.ts:67:9 › Auth Flow › should show password mismatch error
+PAGE LOG: [vite] connecting...
+
+[1A[2K[chromium] › e2e/auth.spec.ts:46:9 › Auth Flow › should show register form with all fields
+PAGE LOG: Angular is running in development mode.
+
+[1A[2K[chromium] › e2e/auth.spec.ts:67:9 › Auth Flow › should show password mismatch error
+PAGE LOG: [vite] connected.
+
+[1A[2K[chromium] › e2e/auth.spec.ts:46:9 › Auth Flow › should show register form with all fields
+PAGE LOG: [vite] connected.
+
+[1A[2K[chromium] › e2e/auth.spec.ts:54:9 › Auth Flow › should show validation errors on invalid registration
+PAGE LOG: Angular is running in development mode.
+
+[1A[2K[chromium] › e2e/auth.spec.ts:81:9 › Auth Flow › should show check email screen after successful registration
+PAGE LOG: [vite] connecting...
+
+[1A[2K[chromium] › e2e/auth.spec.ts:54:9 › Auth Flow › should show validation errors on invalid registration
+PAGE LOG: [vite] connected.
+
+[1A[2K[chromium] › e2e/auth.spec.ts:81:9 › Auth Flow › should show check email screen after successful registration
+PAGE LOG: [vite] connected.
+
+[1A[2K[chromium] › e2e/auth.spec.ts:67:9 › Auth Flow › should show password mismatch error
+PAGE LOG: Angular is running in development mode.
+
+[1A[2K[chromium] › e2e/auth.spec.ts:54:9 › Auth Flow › should show validation errors on invalid registration
+PAGE LOG: [vite] connecting...
+
+[1A[2KPAGE LOG: Angular is running in development mode.
+
+[1A[2K[chromium] › e2e/auth.spec.ts:81:9 › Auth Flow › should show check email screen after successful registration
+PAGE LOG: Angular is running in development mode.
+
+[1A[2K[chromium] › e2e/auth.spec.ts:54:9 › Auth Flow › should show validation errors on invalid registration
+PAGE LOG: [vite] connected.
+
+[1A[2K[chromium] › e2e/auth.spec.ts:67:9 › Auth Flow › should show password mismatch error
+PAGE LOG: [vite] connecting...
+
+[1A[2KPAGE LOG: Angular is running in development mode.
+
+[1A[2K[chromium] › e2e/auth.spec.ts:81:9 › Auth Flow › should show check email screen after successful registration
+PAGE LOG: [vite] connecting...
+
+[1A[2KPAGE LOG: Angular is running in development mode.
+
+[1A[2K[chromium] › e2e/auth.spec.ts:67:9 › Auth Flow › should show password mismatch error
+PAGE LOG: [vite] connected.
+
+[1A[2K[chromium] › e2e/auth.spec.ts:81:9 › Auth Flow › should show check email screen after successful registration
+PAGE LOG: [vite] connected.
+
+[1A[2K[9/9] [chromium] › e2e/auth.spec.ts:95:9 › Auth Flow › should navigate from register to login
+[1A[2K[chromium] › e2e/auth.spec.ts:95:9 › Auth Flow › should navigate from register to login
+PAGE LOG: [vite] connecting...
+
+[1A[2KPAGE LOG: [vite] connected.
+
+[1A[2KPAGE LOG: Angular is running in development mode.
+
+[1A[2KPAGE LOG: [vite] connecting...
+
+[1A[2KPAGE LOG: Angular is running in development mode.
+
+[1A[2KPAGE LOG: [vite] connected.
+
+[1A[2K  1) [chromium] › e2e/auth.spec.ts:67:9 › Auth Flow › should show password mismatch error ──────────
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoContainText[2m([22m[32mexpected[39m[2m)[22m failed
+
+    Locator: locator('mat-form-field').filter({ has: locator('input[formControlName="confirmPassword"]') }).locator('mat-error')
+    Expected substring: [32m"Passwords do not match"[39m
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+    [2m  - Expect "toContainText" with timeout 5000ms[22m
+    [2m  - waiting for locator('mat-form-field').filter({ has: locator('input[formControlName="confirmPassword"]') }).locator('mat-error')[22m
+
+
+      76 |
+      77 |         const confirmError = page.locator('mat-form-field', { has: page.locator('input[formControlName="confirmPassword"]') }).locator('mat-error');
+    > 78 |         await expect(confirmError).toContainText('Passwords do not match');
+         |                                    ^
+      79 |     });
+      80 |
+      81 |     test('should show check email screen after successful registration', async ({ page }) => {
+        at /home/jay/Repos/card-stock/e2e/auth.spec.ts:78:36
+
+    Error Context: test-results/auth-Auth-Flow-should-show-password-mismatch-error-chromium/error-context.md
+
+
+[1A[2K  1 failed
+    [chromium] › e2e/auth.spec.ts:67:9 › Auth Flow › should show password mismatch error ───────────
+  8 passed (8.8s)
+
+[36m  Serving HTML report at http://localhost:40357. Press Ctrl+C to quit.[39m

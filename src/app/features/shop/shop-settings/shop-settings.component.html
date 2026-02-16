@@ -1,0 +1,40 @@
+<div class="settings-container">
+  <header class="page-header">
+    <h1>Shop Settings</h1>
+    <p class="subtitle">Manage your shop preferences and membership.</p>
+  </header>
+
+  @if (error()) {
+    <div class="error-banner">
+      <mat-icon>error</mat-icon>
+      <span>{{ error() }}</span>
+    </div>
+  }
+
+  <mat-card class="danger-zone">
+    <mat-card-header>
+      <mat-card-title class="danger-title">Danger Zone</mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      <p>Once you verify these actions, there is no going back. Please be certain.</p>
+
+      <div class="actions">
+        <button mat-stroked-button class="warn-button" (click)="leaveShop()" [disabled]="loading()">
+          <mat-icon>logout</mat-icon>
+          Leave Shop
+        </button>
+
+        @if (role() === 'owner') {
+          <button mat-flat-button class="warn-button" (click)="deleteShop()" [disabled]="loading()">
+            <mat-icon>delete_forever</mat-icon>
+            Delete Shop
+          </button>
+        }
+      </div>
+
+      @if (loading()) {
+        <mat-progress-spinner mode="indeterminate" diameter="24"></mat-progress-spinner>
+      }
+    </mat-card-content>
+  </mat-card>
+</div>

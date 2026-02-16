@@ -1,0 +1,44 @@
+<div class="shop-layout-container">
+  <mat-toolbar class="shop-toolbar">
+    <button mat-icon-button (click)="drawer.toggle()">
+      <mat-icon>menu</mat-icon>
+    </button>
+
+    <span class="spacer"></span>
+    <span class="shop-name">{{ currentShopName() }}</span>
+  </mat-toolbar>
+
+  <mat-sidenav-container class="sidenav-container">
+    <mat-sidenav #drawer mode="side" opened class="shop-sidenav">
+      <mat-nav-list>
+        <!-- Placeholder Nav Items -->
+        <a mat-list-item routerLink="./dashboard">
+          <mat-icon matListItemIcon>dashboard</mat-icon>
+          <span matListItemTitle>Dashboard</span>
+        </a>
+        <!-- Inventory: Placeholder for Phase 6 -->
+        <a mat-list-item class="disabled">
+          <mat-icon matListItemIcon>inventory_2</mat-icon>
+          <span matListItemTitle>Inventory</span>
+        </a>
+        <a mat-list-item routerLink="./team">
+          <mat-icon matListItemIcon>group</mat-icon>
+          <span matListItemTitle>Team Management</span>
+        </a>
+        <a mat-list-item routerLink="./settings">
+          <mat-icon matListItemIcon>settings</mat-icon>
+          <span matListItemTitle>Shop Settings</span>
+        </a>
+        <mat-divider></mat-divider>
+        <a mat-list-item routerLink="/shop/select">
+          <mat-icon matListItemIcon>swap_horiz</mat-icon>
+          <span matListItemTitle>Switch Store</span>
+        </a>
+      </mat-nav-list>
+    </mat-sidenav>
+
+    <mat-sidenav-content class="content">
+      <router-outlet></router-outlet>
+    </mat-sidenav-content>
+  </mat-sidenav-container>
+</div>

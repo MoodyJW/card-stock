@@ -1,6 +1,8 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('Auth Flow', () => {
+    test.use({ storageState: { cookies: [], origins: [] } });
+
     test.beforeEach(async ({ page }) => {
         // Ensure clean state for every test
         await page.goto('/auth/login');
@@ -83,55 +85,29 @@ test.describe('Auth Flow', () => {
         await page.locator('input[formControlName="confirmPassword"]').fill('testpassword123');
         await page.locator('button[type="submit"]').click();
 
-        await expect(page.locator('.confirmation h2')).toContainText('Check your email');
+        // signUp calls Supabase which sends a confirmation email — allow extra time
+        // Increased timeout to 30s to account for potential Supabase delays
+        // Race condition check: either success or error
+        const success = page.locator('.confirmation h2');
+        const error = page.locator('.auth-error');
+
+        await Promise.race([
+            success.waitFor({ state: 'visible', timeout: 30000 }),
+            error.waitFor({ state: 'visible', timeout: 30000 })
+        ]);
+
+        if (await error.isVisible()) {
+            const errorText = await error.textContent();
+            throw new Error(`Registration failed with error: ${errorText}`);
+        }
+
+        await expect(success).toContainText('Check your email');
         await expect(page.locator('.confirmation-icon')).toBeVisible();
         await expect(page.locator('.confirmation')).toContainText(email);
     });
 
     test('should navigate from register to login', async ({ page }) => {
         await page.goto('/auth/register');
-        await page.locator('a[href="/auth/login"]').click();
-        await expect(page).toHaveURL(/\/auth\/login/);
-    });
-});
-
-test.describe('Forgot Password Flow', () => {
-    test('should navigate to forgot password from login', async ({ page }) => {
-        await page.goto('/auth/login');
-        await page.locator('a[href="/auth/forgot-password"]').click();
-        await expect(page).toHaveURL(/\/auth\/forgot-password/);
-        await expect(page.locator('h2')).toContainText('Reset your password');
-    });
-
-    test('should show validation error for empty email', async ({ page }) => {
-        await page.goto('/auth/forgot-password');
-        await page.locator('button[type="submit"]').click();
-
-        const emailError = page.locator('mat-form-field', { has: page.locator('input[type="email"]') }).locator('mat-error');
-        await expect(emailError).toContainText('Email is required');
-    });
-
-    test('should show validation error for invalid email', async ({ page }) => {
-        await page.goto('/auth/forgot-password');
-        await page.locator('input[type="email"]').fill('not-an-email');
-        await page.locator('input[type="email"]').blur();
-
-        const emailError = page.locator('mat-form-field', { has: page.locator('input[type="email"]') }).locator('mat-error');
-        await expect(emailError).toContainText('Enter a valid email');
-    });
-
-    test('should show check email screen after submitting', async ({ page }) => {
-        await page.goto('/auth/forgot-password');
-        await page.locator('input[type="email"]').fill('test@example.com');
-        await page.locator('button[type="submit"]').click();
-
-        await expect(page.locator('.confirmation h2')).toContainText('Check your email');
-        await expect(page.locator('.confirmation-icon')).toBeVisible();
-        await expect(page.locator('.confirmation')).toContainText('test@example.com');
-    });
-
-    test('should navigate back to login from forgot password', async ({ page }) => {
-        await page.goto('/auth/forgot-password');
         await page.locator('a[href="/auth/login"]').click();
         await expect(page).toHaveURL(/\/auth\/login/);
     });

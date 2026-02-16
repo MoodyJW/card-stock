@@ -1,0 +1,44 @@
+<div class="selector-container">
+  <div class="header">
+    <h1>Select Context</h1>
+    <p class="subtitle">Choose a store to manage.</p>
+  </div>
+
+  <div class="content">
+    @if (loading()) {
+      <mat-spinner diameter="40" />
+    } @else {
+      @if (shops().length === 0) {
+        <mat-card class="empty-state-card">
+          <mat-card-content>
+            <mat-icon class="large-icon">storefront</mat-icon>
+            <h2>No stores found</h2>
+            <p>You aren't a member of any stores yet.</p>
+            <a mat-flat-button routerLink="/shop/create">Create New Store</a>
+          </mat-card-content>
+        </mat-card>
+      } @else {
+        <div class="shop-list">
+          @for (shop of shops(); track shop.id) {
+            <mat-card class="shop-card" (click)="selectShop(shop)">
+              <mat-card-content class="shop-card-content">
+                <div class="shop-info">
+                  <h3 class="shop-name">{{ shop.name }}</h3>
+                  <span class="shop-slug">cardstock.app/{{ shop.slug }}</span>
+                </div>
+                <mat-icon>arrow_forward</mat-icon>
+              </mat-card-content>
+            </mat-card>
+          }
+        </div>
+
+        <div class="actions">
+          <a mat-stroked-button routerLink="/shop/create">
+            <mat-icon>add</mat-icon>
+            Create Another Store
+          </a>
+        </div>
+      }
+    }
+  </div>
+</div>

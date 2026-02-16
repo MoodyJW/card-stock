@@ -1,0 +1,60 @@
+.settings-container {
+  padding: 2rem;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.page-header {
+  margin-bottom: 2rem;
+
+  h1 {
+    margin: 0;
+    font-size: 2rem;
+    font-weight: 500;
+    color: var(--mat-sys-on-background);
+  }
+
+  .subtitle {
+    margin: 0.5rem 0 0;
+    color: var(--mat-sys-on-surface-variant);
+  }
+}
+
+.error-banner {
+  background: color-mix(in srgb, var(--mat-sys-error) 10%, transparent);
+  color: var(--mat-sys-error);
+  padding: 1rem;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 2rem;
+  border: 1px solid var(--mat-sys-error);
+}
+
+.danger-zone {
+  border: 1px solid var(--mat-sys-error);
+  background: color-mix(in srgb, var(--mat-sys-error) 2%, transparent);
+
+  .danger-title {
+    color: var(--mat-sys-error);
+  }
+
+  .actions {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1.5rem;
+    flex-wrap: wrap;
+  }
+
+  mat-progress-spinner {
+    margin-top: 1rem;
+  }
+}
+
+.warn-button {
+  --mdc-filled-button-container-color: var(--mat-sys-error);
+  --mdc-filled-button-label-text-color: var(--mat-sys-on-error);
+  --mdc-outlined-button-label-text-color: var(--mat-sys-error);
+  --mdc-outlined-button-outline-color: var(--mat-sys-error);
+}

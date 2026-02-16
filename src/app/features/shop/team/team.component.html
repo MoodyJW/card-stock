@@ -1,0 +1,108 @@
+<div class="team-container">
+  <div class="header">
+    <h1>Team Management</h1>
+    <p class="subtitle">Manage members and invites for {{ currentShopName() }}</p>
+  </div>
+
+  <div class="content-grid">
+    <!-- Invite Section -->
+    <mat-card class="invite-card">
+      <mat-card-header>
+        <mat-card-title>Invite New Member</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <form [formGroup]="inviteForm" (ngSubmit)="onInvite()">
+          <div class="form-row">
+            <mat-form-field appearance="outline" class="email-input">
+              <mat-label>Email Address</mat-label>
+              <input matInput formControlName="email" placeholder="colleague@example.com" />
+              @if (inviteForm.controls.email.hasError('email')) {
+                <mat-error>Invalid email</mat-error>
+              }
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="role-select">
+              <mat-label>Role</mat-label>
+              <mat-select formControlName="role">
+                <mat-option value="member">Member</mat-option>
+                <mat-option value="admin">Admin</mat-option>
+              </mat-select>
+            </mat-form-field>
+
+            <button
+              mat-flat-button
+              type="submit"
+              [disabled]="inviteForm.invalid || sendingInvite()"
+            >
+              @if (sendingInvite()) {
+                <mat-spinner diameter="20"></mat-spinner>
+              } @else {
+                Send Invite
+              }
+            </button>
+          </div>
+          @if (error()) {
+            <mat-error class="form-error">{{ error() }}</mat-error>
+          }
+          @if (successMessage()) {
+            <p class="success-message">{{ successMessage() }}</p>
+          }
+        </form>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Pending Invites -->
+    @if (invites().length > 0) {
+      <div class="section">
+        <h3>Pending Invites</h3>
+        <mat-list class="glass-list">
+          @for (invite of invites(); track invite.id) {
+            <mat-list-item>
+              <mat-icon matListItemIcon>mail</mat-icon>
+              <span matListItemTitle>{{ invite.email }}</span>
+              <span matListItemLine
+                >Role: {{ invite.role }} • Sent: {{ invite.created_at | date }}</span
+              >
+              <button
+                mat-icon-button
+                matListItemMeta
+                (click)="revokeInvite(invite.id)"
+                matTooltip="Revoke Invite"
+              >
+                <mat-icon class="warn-icon">delete</mat-icon>
+              </button>
+            </mat-list-item>
+          }
+        </mat-list>
+      </div>
+    }
+
+    <!-- Members List -->
+    <mat-card class="members-card">
+      <mat-card-header>
+        <mat-card-title>Team Members</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        @if (loadingMembers()) {
+          <mat-spinner diameter="40"></mat-spinner>
+        } @else {
+          <mat-list class="glass-list">
+            @for (member of members(); track member.id) {
+              <mat-list-item>
+                <mat-icon matListItemIcon>person</mat-icon>
+                <span matListItemTitle>{{
+                  member.profile?.display_name || member.profile?.email
+                }}</span>
+                <span matListItemLine>{{ member.role | titlecase }}</span>
+
+                @if (member.role === 'owner') {
+                  <span matListItemMeta class="owner-badge">Owner</span>
+                }
+              </mat-list-item>
+            }
+          </mat-list>
+        }
+      </mat-card-content>
+    </mat-card>
+  </div>
+</div>

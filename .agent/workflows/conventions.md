@@ -17,8 +17,8 @@ description: Coding conventions and patterns for CardStock development
 - **Angular 21** with Signals, standalone components (default), built-in control flow
 - **Angular Material** for UI components
 - **Supabase** for backend (PostgreSQL, Auth, RLS)
-- **Vitest** for testing
-
+- **Vitest** for unit testing
+- **Playwright** for e2e testing
 ---
 
 ## Component Patterns

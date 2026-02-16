@@ -1,0 +1,46 @@
+.shop-layout-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+.shop-toolbar {
+  z-index: 2; // Above sidenav
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.sidenav-container {
+  flex: 1;
+}
+
+.shop-sidenav {
+  width: 250px;
+  background-color: var(--mat-sys-surface-container); // Matches glass theme nicely
+  border-right: 1px solid var(--mat-sys-outline-variant);
+
+  .mat-nav-list {
+    padding-top: 1rem;
+  }
+
+  .disabled {
+    opacity: 0.4;
+    pointer-events: none;
+    cursor: default;
+  }
+}
+
+.content {
+  padding: 1rem;
+
+  // This is where router-outlet content (dashboard) lives
+}
+
+.spacer {
+  flex: 1 1 auto;
+}
+
+.shop-name {
+  font-size: 1rem;
+  font-weight: 500;
+  opacity: 0.9;
+}

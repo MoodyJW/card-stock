@@ -91,7 +91,7 @@ Deno.serve(async (req: Request) => {
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error);
     console.error("Error sending invite email:", message);
-    return new Response(JSON.stringify({ error: message }), {
+    return new Response(JSON.stringify({ error: "Internal server error" }), {
       status: 500,
       headers: { "Content-Type": "application/json" },
     });

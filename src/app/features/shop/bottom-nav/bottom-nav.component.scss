@@ -1,0 +1,69 @@
+@use 'theme/utilities' as *;
+
+:host {
+  display: block;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+
+  // Glassmorphism
+  background-color: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+
+  // Safe area padding for notches/home indicators
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+nav {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  height: 64px; // Standard touch target height
+  padding: 0 16px;
+}
+
+.nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  color: var(--mat-sys-on-surface-variant);
+  gap: 4px;
+  background: none;
+  border: none;
+  padding: 8px;
+  min-width: 64px;
+
+  // Icon styling
+  mat-icon {
+    font-size: 24px;
+    height: 24px;
+    width: 24px;
+    transition: color 0.2s ease;
+  }
+
+  // Label styling
+  span {
+    font-size: 12px;
+    font-weight: 500;
+    transition: color 0.2s ease;
+  }
+
+  &.active {
+    color: var(--mat-sys-primary);
+
+    mat-icon {
+      color: var(--mat-sys-primary);
+    }
+  }
+
+  &.disabled {
+    opacity: 0.5;
+    pointer-events: none;
+  }
+}

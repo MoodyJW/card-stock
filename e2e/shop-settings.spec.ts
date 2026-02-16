@@ -26,8 +26,8 @@ test.describe('Shop Settings Flow', () => {
         // Should be redirected to dashboard
         await expect(page).toHaveURL(new RegExp(`/shop/${shopSlug}/dashboard`));
 
-        // Navigate to Settings Page using text selector which is more robust
-        await page.click('text=Shop Settings');
+        // Navigate to Settings Page
+        await page.getByRole('link', { name: /Settings/ }).first().click();
     });
 
     test('should display settings page', async ({ page }) => {

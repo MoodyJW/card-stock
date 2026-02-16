@@ -1,44 +1,70 @@
 <div class="shop-layout-container">
-  <mat-toolbar class="shop-toolbar">
-    <button mat-icon-button (click)="drawer.toggle()">
-      <mat-icon>menu</mat-icon>
-    </button>
+  @if (isMobile()) {
+    <!-- Mobile Layout -->
+    <mat-toolbar class="shop-toolbar">
+      <span class="shop-name">{{ currentShopName() }}</span>
+      <span class="spacer"></span>
+      <button mat-icon-button [matMenuTriggerFor]="menu">
+        <mat-icon>more_vert</mat-icon>
+      </button>
+      <mat-menu #menu="matMenu">
+        <button mat-menu-item routerLink="/shop/select">
+          <mat-icon>swap_horiz</mat-icon>
+          <span>Switch Store</span>
+        </button>
+      </mat-menu>
+    </mat-toolbar>
 
-    <span class="spacer"></span>
-    <span class="shop-name">{{ currentShopName() }}</span>
-  </mat-toolbar>
-
-  <mat-sidenav-container class="sidenav-container">
-    <mat-sidenav #drawer mode="side" opened class="shop-sidenav">
-      <mat-nav-list>
-        <!-- Placeholder Nav Items -->
-        <a mat-list-item routerLink="./dashboard">
-          <mat-icon matListItemIcon>dashboard</mat-icon>
-          <span matListItemTitle>Dashboard</span>
-        </a>
-        <!-- Inventory: Placeholder for Phase 6 -->
-        <a mat-list-item class="disabled">
-          <mat-icon matListItemIcon>inventory_2</mat-icon>
-          <span matListItemTitle>Inventory</span>
-        </a>
-        <a mat-list-item routerLink="./team">
-          <mat-icon matListItemIcon>group</mat-icon>
-          <span matListItemTitle>Team Management</span>
-        </a>
-        <a mat-list-item routerLink="./settings">
-          <mat-icon matListItemIcon>settings</mat-icon>
-          <span matListItemTitle>Shop Settings</span>
-        </a>
-        <mat-divider></mat-divider>
-        <a mat-list-item routerLink="/shop/select">
-          <mat-icon matListItemIcon>swap_horiz</mat-icon>
-          <span matListItemTitle>Switch Store</span>
-        </a>
-      </mat-nav-list>
-    </mat-sidenav>
-
-    <mat-sidenav-content class="content">
+    <div class="content has-bottom-bar">
       <router-outlet></router-outlet>
-    </mat-sidenav-content>
-  </mat-sidenav-container>
+    </div>
+
+    <app-bottom-nav />
+  } @else {
+    <!-- Desktop Layout -->
+    <mat-toolbar class="shop-toolbar">
+      <button mat-icon-button (click)="drawer.toggle()">
+        <mat-icon>menu</mat-icon>
+      </button>
+      <span class="spacer"></span>
+      <span class="shop-name">{{ currentShopName() }}</span>
+    </mat-toolbar>
+
+    <mat-sidenav-container class="sidenav-container">
+      <mat-sidenav #drawer mode="side" opened class="shop-sidenav">
+        <mat-nav-list>
+          <a
+            mat-list-item
+            routerLink="./dashboard"
+            routerLinkActive="active"
+            [routerLinkActiveOptions]="{ exact: true }"
+          >
+            <mat-icon matListItemIcon>dashboard</mat-icon>
+            <span matListItemTitle>Dashboard</span>
+          </a>
+          <a mat-list-item class="disabled">
+            <mat-icon matListItemIcon>inventory_2</mat-icon>
+            <span matListItemTitle>Inventory</span>
+          </a>
+          <a mat-list-item routerLink="./team" routerLinkActive="active">
+            <mat-icon matListItemIcon>group</mat-icon>
+            <span matListItemTitle>Team Management</span>
+          </a>
+          <a mat-list-item routerLink="./settings" routerLinkActive="active">
+            <mat-icon matListItemIcon>settings</mat-icon>
+            <span matListItemTitle>Shop Settings</span>
+          </a>
+          <mat-divider></mat-divider>
+          <a mat-list-item routerLink="/shop/select">
+            <mat-icon matListItemIcon>swap_horiz</mat-icon>
+            <span matListItemTitle>Switch Store</span>
+          </a>
+        </mat-nav-list>
+      </mat-sidenav>
+
+      <mat-sidenav-content class="content">
+        <router-outlet></router-outlet>
+      </mat-sidenav-content>
+    </mat-sidenav-container>
+  }
 </div>

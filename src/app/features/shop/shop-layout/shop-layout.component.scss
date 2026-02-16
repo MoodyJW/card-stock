@@ -1,46 +1,57 @@
 .shop-layout-container {
+  height: 100vh;
   display: flex;
   flex-direction: column;
-  height: 100vh;
 }
 
 .shop-toolbar {
-  z-index: 2; // Above sidenav
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  position: relative;
+  z-index: 2; // Above sidenav content
+  background: transparent;
+  color: var(--mat-sys-on-background);
 }
 
 .sidenav-container {
   flex: 1;
+  background: transparent;
 }
 
 .shop-sidenav {
   width: 250px;
-  background-color: var(--mat-sys-surface-container); // Matches glass theme nicely
-  border-right: 1px solid var(--mat-sys-outline-variant);
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+  padding-top: 20px;
 
-  .mat-nav-list {
-    padding-top: 1rem;
-  }
-
-  .disabled {
-    opacity: 0.4;
-    pointer-events: none;
-    cursor: default;
+  .mat-drawer-inner-container {
+    background: transparent;
   }
 }
 
 .content {
-  padding: 1rem;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  height: 100%;
+  box-sizing: border-box;
 
-  // This is where router-outlet content (dashboard) lives
+  // Mobile padding to clear bottom nav
+  &.has-bottom-bar {
+    padding-bottom: calc(80px + env(safe-area-inset-bottom));
+  }
 }
 
-.spacer {
-  flex: 1 1 auto;
-}
+// Mobile-specific layout overrides
+@media (max-width: 767px) {
+  .shop-layout-container {
+    height: 100%;
+    min-height: 100vh;
+  }
 
-.shop-name {
-  font-size: 1rem;
-  font-weight: 500;
-  opacity: 0.9;
+  .shop-toolbar {
+    position: sticky;
+    top: 0;
+    backdrop-filter: blur(10px);
+    background: rgba(var(--mat-sys-background), 0.8);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  }
 }

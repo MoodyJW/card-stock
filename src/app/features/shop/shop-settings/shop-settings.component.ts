@@ -6,6 +6,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { ShopService } from '../../../core/services/shop.service';
 import { ShopContextService } from '../../../core/services/shop-context.service';
+import { NotificationService } from '../../../core/services/notification.service';
 
 @Component({
   selector: 'app-shop-settings',
@@ -17,10 +18,10 @@ export class ShopSettingsComponent {
   private readonly shopService = inject(ShopService);
   private readonly shopContext = inject(ShopContextService);
   private readonly router = inject(Router);
+  private readonly notify = inject(NotificationService);
 
   readonly loading = signal(false);
   readonly role = signal<string | null>(null);
-  readonly error = signal<string | null>(null);
 
   constructor() {
     effect(() => {
@@ -32,23 +33,23 @@ export class ShopSettingsComponent {
   }
 
   private async getMyRole(shopId: string) {
-    const { data } = await this.shopService.getMyRole(shopId);
-    if (data) {
+    const { data, error } = await this.shopService.getMyRole(shopId);
+    if (error) {
+      this.notify.error('Failed to load role');
+    } else if (data) {
       this.role.set(data.role);
     }
   }
 
   async leaveShop() {
     if (!confirm('Are you sure you want to leave this shop?')) return;
-
     this.loading.set(true);
-    this.error.set(null);
     const shopId = this.shopContext.currentShopId();
 
     if (shopId) {
       const { error } = await this.shopService.leaveShop(shopId);
       if (error) {
-        this.error.set(error.message);
+        this.notify.error(error.message);
         this.loading.set(false);
       } else {
         await this.handleExit();
@@ -61,15 +62,13 @@ export class ShopSettingsComponent {
       'Type "DELETE" to confirm deletion of this shop. This action cannot be undone.',
     );
     if (confirmation !== 'DELETE') return;
-
     this.loading.set(true);
-    this.error.set(null);
     const shopId = this.shopContext.currentShopId();
 
     if (shopId) {
       const { error } = await this.shopService.deleteShop(shopId);
       if (error) {
-        this.error.set(error.message);
+        this.notify.error(error.message);
         this.loading.set(false);
       } else {
         await this.handleExit();

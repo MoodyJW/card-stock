@@ -6,10 +6,6 @@
 
   <mat-card class="shop-form-card">
     <mat-card-content>
-      @if (error()) {
-        <mat-error class="form-error">{{ error() }}</mat-error>
-      }
-
       <form [formGroup]="form" (ngSubmit)="onSubmit()">
         <mat-form-field appearance="outline">
           <mat-label>Store Name</mat-label>

@@ -6,6 +6,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatIconModule } from '@angular/material/icon';
 import { ShopService } from '../../../core/services/shop.service';
 import { ShopContextService } from '../../../core/services/shop-context.service';
+import { NotificationService } from '../../../core/services/notification.service';
 
 @Component({
   selector: 'app-accept-invite',
@@ -18,6 +19,7 @@ export class AcceptInviteComponent {
   private readonly router = inject(Router);
   private readonly shopService = inject(ShopService);
   private readonly shopContext = inject(ShopContextService);
+  private readonly notify = inject(NotificationService);
 
   readonly loading = signal(false);
   readonly error = signal<string | null>(null);
@@ -44,8 +46,10 @@ export class AcceptInviteComponent {
 
     if (error) {
       this.error.set(error.message || 'Failed to accept invite.');
+      this.notify.error(error.message || 'Failed to accept invite.');
     } else {
       this.success.set(true);
+      this.notify.success('Welcome! You have joined the shop.');
     }
   }
 

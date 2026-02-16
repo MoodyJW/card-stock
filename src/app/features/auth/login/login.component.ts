@@ -7,6 +7,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { SupabaseService } from '../../../core/services/supabase.service';
+import { NotificationService } from '../../../core/services/notification.service';
 
 @Component({
   selector: 'app-login',
@@ -26,9 +27,9 @@ export class LoginComponent {
   private readonly supabase = inject(SupabaseService);
   private readonly router = inject(Router);
   private readonly fb = inject(FormBuilder);
+  private readonly notify = inject(NotificationService);
 
   readonly loading = signal(false);
-  readonly error = signal<string | null>(null);
   readonly hidePassword = signal(true);
 
   readonly form = this.fb.nonNullable.group({
@@ -43,7 +44,6 @@ export class LoginComponent {
     }
 
     this.loading.set(true);
-    this.error.set(null);
 
     const { email, password } = this.form.getRawValue();
     const { error } = await this.supabase.signInWithEmail(email, password);
@@ -51,7 +51,7 @@ export class LoginComponent {
     this.loading.set(false);
 
     if (error) {
-      this.error.set(error.message);
+      this.notify.error(error.message);
     } else {
       this.router.navigate(['/']);
     }

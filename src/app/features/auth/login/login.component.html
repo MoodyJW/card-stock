@@ -1,9 +1,5 @@
 <h2 class="auth-title">Welcome back</h2>
 
-@if (error()) {
-  <mat-error class="auth-error">{{ error() }}</mat-error>
-}
-
 <form [formGroup]="form" (ngSubmit)="onSubmit()">
   <mat-form-field appearance="outline">
     <mat-label>Email</mat-label>

@@ -1,8 +1,8 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ResetPasswordComponent } from './reset-password.component';
 import { SupabaseService } from '../../../core/services/supabase.service';
-import { Router } from '@angular/router';
-import { RouterTestingModule } from '@angular/router/testing';
+import { NotificationService } from '../../../core/services/notification.service';
+import { Router, provideRouter } from '@angular/router';
 import { Signal, signal } from '@angular/core';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { vi, describe, it, expect, beforeEach, Mock } from 'vitest';
@@ -17,6 +17,7 @@ describe('ResetPasswordComponent', () => {
   let component: ResetPasswordComponent;
   let fixture: ComponentFixture<ResetPasswordComponent>;
   let supabaseMock: MockSupabaseService;
+  let notifyMock: { error: Mock; success: Mock; info: Mock };
   let router: Router;
 
   beforeEach(async () => {
@@ -26,9 +27,20 @@ describe('ResetPasswordComponent', () => {
       passwordRecovery: signal(true),
     };
 
+    notifyMock = {
+      error: vi.fn(),
+      success: vi.fn(),
+      info: vi.fn(),
+    };
+
     await TestBed.configureTestingModule({
-      imports: [ResetPasswordComponent, RouterTestingModule],
-      providers: [provideAnimationsAsync(), { provide: SupabaseService, useValue: supabaseMock }],
+      imports: [ResetPasswordComponent],
+      providers: [
+        provideAnimationsAsync(),
+        provideRouter([]),
+        { provide: SupabaseService, useValue: supabaseMock },
+        { provide: NotificationService, useValue: notifyMock },
+      ],
     }).compileComponents();
 
     router = TestBed.inject(Router);
@@ -82,19 +94,15 @@ describe('ResetPasswordComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('Password updated');
   });
 
-  it('should show error message on failed update', async () => {
+  it('should show error toast on failed update', async () => {
     supabaseMock.updatePassword.mockResolvedValue({ error: { message: 'Weak password' } });
     component.form.controls.password.setValue('newpassword123');
     component.form.controls.confirmPassword.setValue('newpassword123');
 
     await component.onSubmit();
-    fixture.detectChanges();
 
     expect(component.success()).toBe(false);
-    expect(component.error()).toBe('Weak password');
-    const errorMsg = fixture.nativeElement.querySelector('.auth-error');
-    expect(errorMsg).toBeTruthy();
-    expect(errorMsg.textContent).toContain('Weak password');
+    expect(notifyMock.error).toHaveBeenCalledWith('Weak password');
   });
 
   it('should navigate to home on goToHome()', () => {

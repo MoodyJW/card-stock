@@ -4,6 +4,8 @@ import { provideRouter } from '@angular/router';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { ShopService } from '../../../core/services/shop.service';
 import { ShopContextService } from '../../../core/services/shop-context.service';
+import { NotificationService } from '../../../core/services/notification.service';
+import { vi } from 'vitest';
 
 describe('CreateShopComponent', () => {
   let component: CreateShopComponent;
@@ -18,6 +20,7 @@ describe('CreateShopComponent', () => {
       /* noop */
     },
   };
+  const mockNotify = { error: vi.fn(), success: vi.fn(), info: vi.fn() };
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
@@ -26,6 +29,7 @@ describe('CreateShopComponent', () => {
         provideRouter([]),
         { provide: ShopService, useValue: mockShopService },
         { provide: ShopContextService, useValue: mockShopContext },
+        { provide: NotificationService, useValue: mockNotify },
       ],
     }).compileComponents();
 

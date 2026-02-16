@@ -72,3 +72,23 @@ body {
 
   // Remove default elevation shadows if they clash (optional, keeping for depth)
 }
+
+// Snackbar Toast Variants
+.snackbar-success .mdc-snackbar__surface {
+  background-color: #2e7d32 !important;
+  color: #fff !important;
+}
+
+.snackbar-error .mdc-snackbar__surface {
+  background-color: #c62828 !important;
+  color: #fff !important;
+}
+
+.snackbar-error .mdc-snackbar__surface .mat-mdc-button {
+  color: #fff !important;
+}
+
+.snackbar-info .mdc-snackbar__surface {
+  background-color: var(--mat-sys-surface-container-high) !important;
+  color: #fff !important;
+}

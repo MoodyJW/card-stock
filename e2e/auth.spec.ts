@@ -39,8 +39,9 @@ test.describe('Auth Flow', () => {
         await page.locator('input[type="password"]').fill('password123');
         await page.locator('button[type="submit"]').click();
 
-        await expect(page.locator('.auth-error')).toBeVisible();
-        await expect(page.locator('.auth-error')).toContainText('Invalid login credentials');
+        const snackbar = page.locator('mat-snack-bar-container');
+        await expect(snackbar).toBeVisible();
+        await expect(snackbar).toContainText('Invalid login credentials');
     });
 
     test('should show register form with all fields', async ({ page }) => {
@@ -89,15 +90,15 @@ test.describe('Auth Flow', () => {
         // Increased timeout to 30s to account for potential Supabase delays
         // Race condition check: either success or error
         const success = page.locator('.confirmation h2');
-        const error = page.locator('.auth-error');
+        const snackbar = page.locator('mat-snack-bar-container');
 
         await Promise.race([
             success.waitFor({ state: 'visible', timeout: 30000 }),
-            error.waitFor({ state: 'visible', timeout: 30000 })
+            snackbar.waitFor({ state: 'visible', timeout: 30000 })
         ]);
 
-        if (await error.isVisible()) {
-            const errorText = await error.textContent();
+        if (await snackbar.isVisible()) {
+            const errorText = await snackbar.textContent();
             throw new Error(`Registration failed with error: ${errorText}`);
         }
 

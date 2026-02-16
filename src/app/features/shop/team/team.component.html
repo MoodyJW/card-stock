@@ -41,12 +41,6 @@
               }
             </button>
           </div>
-          @if (error()) {
-            <mat-error class="form-error">{{ error() }}</mat-error>
-          }
-          @if (successMessage()) {
-            <p class="success-message">{{ successMessage() }}</p>
-          }
         </form>
       </mat-card-content>
     </mat-card>
@@ -91,7 +85,7 @@
               <mat-list-item>
                 <mat-icon matListItemIcon>person</mat-icon>
                 <span matListItemTitle>{{
-                  member.profile?.display_name || member.profile?.email
+                  member.profile.display_name || member.profile.email
                 }}</span>
                 <span matListItemLine>{{ member.role | titlecase }}</span>
 

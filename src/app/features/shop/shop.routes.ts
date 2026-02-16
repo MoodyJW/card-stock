@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { shopGuard } from '../../core/guards/shop.guard';
 
 export default [
   {
@@ -21,6 +22,7 @@ export default [
   },
   {
     path: ':slug',
+    canActivate: [shopGuard],
     loadComponent: () =>
       import('./shop-layout/shop-layout.component').then(m => m.ShopLayoutComponent),
     children: [

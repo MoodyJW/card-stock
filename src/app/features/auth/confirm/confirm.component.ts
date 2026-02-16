@@ -1,9 +1,10 @@
-import { Component, DestroyRef, inject, signal, OnInit } from '@angular/core';
+import { Component, DestroyRef, inject, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { SupabaseService } from '../../../core/services/supabase.service';
+import { NotificationService } from '../../../core/services/notification.service';
 
 @Component({
   selector: 'app-confirm',
@@ -11,15 +12,16 @@ import { SupabaseService } from '../../../core/services/supabase.service';
   templateUrl: './confirm.component.html',
   styleUrl: './confirm.component.scss',
 })
-export class ConfirmComponent implements OnInit {
+export class ConfirmComponent {
   private readonly supabase = inject(SupabaseService);
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly notify = inject(NotificationService);
 
   readonly status = signal<'loading' | 'success' | 'error'>('loading');
   readonly error = signal<string | null>(null);
 
-  async ngOnInit(): Promise<void> {
+  constructor() {
     // Supabase handles the token exchange automatically via the URL hash
     // We just need to wait for the auth state to update
     const maxWait = 5000;
@@ -37,6 +39,7 @@ export class ConfirmComponent implements OnInit {
         clearInterval(check);
         this.status.set('error');
         this.error.set('Confirmation failed. The link may have expired.');
+        this.notify.error('Confirmation failed. The link may have expired.');
       }
     }, interval);
 

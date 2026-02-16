@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ForgotPasswordComponent } from './forgot-password.component';
 import { SupabaseService } from '../../../core/services/supabase.service';
+import { NotificationService } from '../../../core/services/notification.service';
 import { ActivatedRoute } from '@angular/router';
 import { Signal, signal } from '@angular/core';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
@@ -15,6 +16,7 @@ describe('ForgotPasswordComponent', () => {
   let component: ForgotPasswordComponent;
   let fixture: ComponentFixture<ForgotPasswordComponent>;
   let supabaseMock: MockSupabaseService;
+  let notifyMock: { error: Mock; success: Mock; info: Mock };
 
   beforeEach(async () => {
     supabaseMock = {
@@ -22,11 +24,18 @@ describe('ForgotPasswordComponent', () => {
       loading: signal(false),
     };
 
+    notifyMock = {
+      error: vi.fn(),
+      success: vi.fn(),
+      info: vi.fn(),
+    };
+
     await TestBed.configureTestingModule({
       imports: [ForgotPasswordComponent],
       providers: [
         provideAnimationsAsync(),
         { provide: SupabaseService, useValue: supabaseMock },
+        { provide: NotificationService, useValue: notifyMock },
         { provide: ActivatedRoute, useValue: {} },
       ],
     }).compileComponents();
@@ -77,18 +86,14 @@ describe('ForgotPasswordComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('test@test.com');
   });
 
-  it('should show error message on failed submit', async () => {
+  it('should show error toast on failed submit', async () => {
     supabaseMock.resetPassword.mockResolvedValue({ error: { message: 'Rate limit exceeded' } });
     component.form.controls.email.setValue('test@test.com');
 
     await component.onSubmit();
-    fixture.detectChanges();
 
     expect(component.submitted()).toBe(false);
-    expect(component.error()).toBe('Rate limit exceeded');
-    const errorMsg = fixture.nativeElement.querySelector('.auth-error');
-    expect(errorMsg).toBeTruthy();
-    expect(errorMsg.textContent).toContain('Rate limit exceeded');
+    expect(notifyMock.error).toHaveBeenCalledWith('Rate limit exceeded');
   });
 
   it('should set loading during submit', async () => {

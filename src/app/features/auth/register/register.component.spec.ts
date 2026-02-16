@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { RegisterComponent } from './register.component';
 import { SupabaseService } from '../../../core/services/supabase.service';
+import { NotificationService } from '../../../core/services/notification.service';
 import { ActivatedRoute } from '@angular/router';
 import { Signal, signal } from '@angular/core';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
@@ -15,6 +16,7 @@ describe('RegisterComponent', () => {
   let component: RegisterComponent;
   let fixture: ComponentFixture<RegisterComponent>;
   let supabaseMock: MockSupabaseService;
+  let notifyMock: { error: Mock; success: Mock; info: Mock };
 
   beforeEach(async () => {
     supabaseMock = {
@@ -22,11 +24,18 @@ describe('RegisterComponent', () => {
       loading: signal(false),
     };
 
+    notifyMock = {
+      error: vi.fn(),
+      success: vi.fn(),
+      info: vi.fn(),
+    };
+
     await TestBed.configureTestingModule({
       imports: [RegisterComponent],
       providers: [
         provideAnimationsAsync(),
         { provide: SupabaseService, useValue: supabaseMock },
+        { provide: NotificationService, useValue: notifyMock },
         { provide: ActivatedRoute, useValue: {} },
       ],
     }).compileComponents();
@@ -92,16 +101,14 @@ describe('RegisterComponent', () => {
     expect(matError.textContent).toContain('Passwords do not match');
   });
 
-  it('should show error message on failed registration', async () => {
+  it('should show error toast on failed registration', async () => {
     supabaseMock.signUp.mockResolvedValue({ error: { message: 'Registration failed' } });
     component.form.controls.email.setValue('test@test.com');
     component.form.controls.password.setValue('password123');
     component.form.controls.confirmPassword.setValue('password123');
 
     await component.onSubmit();
-    fixture.detectChanges();
 
-    expect(component.error()).toBe('Registration failed');
-    expect(fixture.nativeElement.textContent).toContain('Registration failed');
+    expect(notifyMock.error).toHaveBeenCalledWith('Registration failed');
   });
 });

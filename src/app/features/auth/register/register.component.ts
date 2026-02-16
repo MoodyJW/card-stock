@@ -16,6 +16,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { ErrorStateMatcher } from '@angular/material/core';
 import { SupabaseService } from '../../../core/services/supabase.service';
+import { NotificationService } from '../../../core/services/notification.service';
 
 export class ConfirmPasswordMatcher implements ErrorStateMatcher {
   isErrorState(control: AbstractControl | null, form: FormGroupDirective | NgForm | null): boolean {
@@ -46,9 +47,9 @@ export class ConfirmPasswordMatcher implements ErrorStateMatcher {
 export class RegisterComponent {
   private readonly supabase = inject(SupabaseService);
   private readonly fb = inject(FormBuilder);
+  private readonly notify = inject(NotificationService);
 
   readonly loading = signal(false);
-  readonly error = signal<string | null>(null);
   readonly registered = signal(false);
   readonly hidePassword = signal(true);
   readonly hideConfirm = signal(true);
@@ -70,13 +71,12 @@ export class RegisterComponent {
     }
 
     this.loading.set(true);
-    this.error.set(null);
 
     const { email, password } = this.form.getRawValue();
     const { error } = await this.supabase.signUp(email, password);
 
     if (error) {
-      this.error.set(error.message);
+      this.notify.error(error.message);
       this.loading.set(false);
     } else {
       this.registered.set(true);

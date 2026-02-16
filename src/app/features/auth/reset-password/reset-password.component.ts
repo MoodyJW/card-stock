@@ -16,6 +16,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { ErrorStateMatcher } from '@angular/material/core';
 import { SupabaseService } from '../../../core/services/supabase.service';
+import { NotificationService } from '../../../core/services/notification.service';
 
 export class ConfirmNewPasswordMatcher implements ErrorStateMatcher {
   isErrorState(control: AbstractControl | null, form: FormGroupDirective | NgForm | null): boolean {
@@ -46,9 +47,9 @@ export class ResetPasswordComponent {
   private readonly supabase = inject(SupabaseService);
   private readonly router = inject(Router);
   private readonly fb = inject(FormBuilder);
+  private readonly notify = inject(NotificationService);
 
   readonly loading = signal(false);
-  readonly error = signal<string | null>(null);
   readonly success = signal(false);
   readonly hidePassword = signal(true);
   readonly hideConfirm = signal(true);
@@ -69,7 +70,6 @@ export class ResetPasswordComponent {
     }
 
     this.loading.set(true);
-    this.error.set(null);
 
     const { password } = this.form.getRawValue();
     const { error } = await this.supabase.updatePassword(password);
@@ -77,7 +77,7 @@ export class ResetPasswordComponent {
     this.loading.set(false);
 
     if (error) {
-      this.error.set(error.message);
+      this.notify.error(error.message);
     } else {
       this.success.set(true);
     }

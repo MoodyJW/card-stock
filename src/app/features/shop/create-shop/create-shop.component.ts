@@ -9,6 +9,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatIconModule } from '@angular/material/icon';
 import { ShopService } from '../../../core/services/shop.service';
 import { ShopContextService } from '../../../core/services/shop-context.service';
+import { NotificationService } from '../../../core/services/notification.service';
 
 @Component({
   selector: 'app-create-shop',
@@ -30,9 +31,9 @@ export class CreateShopComponent {
   private readonly router = inject(Router);
   private readonly shopService = inject(ShopService);
   private readonly shopContext = inject(ShopContextService);
+  private readonly notify = inject(NotificationService);
 
   readonly loading = signal(false);
-  readonly error = signal<string | null>(null);
 
   readonly form = this.fb.nonNullable.group({
     name: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(100)]],
@@ -55,7 +56,6 @@ export class CreateShopComponent {
     if (this.form.invalid) return;
 
     this.loading.set(true);
-    this.error.set(null);
 
     const { name, slug } = this.form.getRawValue();
 
@@ -63,7 +63,7 @@ export class CreateShopComponent {
 
     if (error) {
       this.loading.set(false);
-      this.error.set(error.message || 'Failed to create shop. Try a different URL.');
+      this.notify.error(error.message || 'Failed to create shop. Try a different URL.');
       return;
     }
 
@@ -74,7 +74,7 @@ export class CreateShopComponent {
       this.router.navigate(['/shop', data.slug]);
     } else {
       this.loading.set(false);
-      this.error.set('Something went wrong.');
+      this.notify.error('Something went wrong.');
     }
   }
 }

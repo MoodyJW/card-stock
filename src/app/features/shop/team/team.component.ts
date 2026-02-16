@@ -13,6 +13,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { ShopService } from '../../../core/services/shop.service';
 import { ShopContextService } from '../../../core/services/shop-context.service';
 import { Invite, MemberProfile } from '../../../core/models/shop.model';
+import { NotificationService } from '../../../core/services/notification.service';
 
 @Component({
   selector: 'app-team',
@@ -37,14 +38,13 @@ export class TeamComponent {
   private readonly shopService = inject(ShopService);
   private readonly shopContext = inject(ShopContextService);
   private readonly fb = inject(FormBuilder);
+  private readonly notify = inject(NotificationService);
 
   readonly currentShopName = computed(() => this.shopContext.currentShop()?.name ?? '');
   readonly members = signal<MemberProfile[]>([]);
   readonly invites = signal<Invite[]>([]);
   readonly loadingMembers = signal(false);
   readonly sendingInvite = signal(false);
-  readonly error = signal<string | null>(null);
-  readonly successMessage = signal<string | null>(null);
 
   readonly inviteForm = this.fb.nonNullable.group({
     email: ['', [Validators.required, Validators.email]],
@@ -70,6 +70,9 @@ export class TeamComponent {
 
     if (membersRes.error) console.error('Error loading members:', membersRes.error);
     if (invitesRes.error) console.error('Error loading invites:', invitesRes.error);
+    if (membersRes.error || invitesRes.error) {
+      this.notify.error('Failed to load team data');
+    }
 
     this.members.set((membersRes.data as MemberProfile[]) || []);
     this.invites.set((invitesRes.data as Invite[]) || []);
@@ -83,17 +86,15 @@ export class TeamComponent {
     if (!shopId) return;
 
     this.sendingInvite.set(true);
-    this.error.set(null);
-    this.successMessage.set(null);
 
     const { email, role } = this.inviteForm.getRawValue();
 
     const { error } = await this.shopService.sendInvite(shopId, email, role);
 
     if (error) {
-      this.error.set(error.message);
+      this.notify.error(error.message);
     } else {
-      this.successMessage.set(`Invite sent to ${email}`);
+      this.notify.success(`Invite sent to ${email}`);
       this.inviteForm.reset({ role: 'member' });
       await this.loadData(shopId);
     }
@@ -109,7 +110,7 @@ export class TeamComponent {
     const { error } = await this.shopService.revokeInvite(inviteId);
 
     if (error) {
-      this.error.set('Failed to revoke invite');
+      this.notify.error('Failed to revoke invite');
     } else {
       await this.loadData(shopId);
     }

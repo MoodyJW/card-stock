@@ -11,10 +11,6 @@
 } @else {
   <h2 class="auth-title">Create your account</h2>
 
-  @if (error()) {
-    <mat-error class="auth-error">{{ error() }}</mat-error>
-  }
-
   <form [formGroup]="form" (ngSubmit)="onSubmit()">
     <mat-form-field appearance="outline">
       <mat-label>Email</mat-label>
@@ -63,7 +59,7 @@
       }
     </mat-form-field>
 
-    <button mat-flat-button color="primary" type="submit" [disabled]="loading()" class="submit-btn">
+    <button mat-flat-button type="submit" [disabled]="loading()" class="submit-btn">
       @if (loading()) {
         <mat-spinner diameter="20" />
       } @else {

@@ -7,6 +7,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { SupabaseService } from '../../../core/services/supabase.service';
+import { NotificationService } from '../../../core/services/notification.service';
 
 @Component({
   selector: 'app-forgot-password',
@@ -25,9 +26,9 @@ import { SupabaseService } from '../../../core/services/supabase.service';
 export class ForgotPasswordComponent {
   private readonly supabase = inject(SupabaseService);
   private readonly fb = inject(FormBuilder);
+  private readonly notify = inject(NotificationService);
 
   readonly loading = signal(false);
-  readonly error = signal<string | null>(null);
   readonly submitted = signal(false);
 
   readonly form = this.fb.nonNullable.group({
@@ -41,7 +42,6 @@ export class ForgotPasswordComponent {
     }
 
     this.loading.set(true);
-    this.error.set(null);
 
     const { email } = this.form.getRawValue();
     const { error } = await this.supabase.resetPassword(email);
@@ -49,7 +49,7 @@ export class ForgotPasswordComponent {
     this.loading.set(false);
 
     if (error) {
-      this.error.set(error.message);
+      this.notify.error(error.message);
     } else {
       this.submitted.set(true);
     }

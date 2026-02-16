@@ -45,8 +45,8 @@ test.describe('Invite System', () => {
         await page.locator('mat-option:has-text("Member")').click();
         await page.locator('button:has-text("Send Invite")').click();
 
-        // Verify Invite in Pending List
-        await expect(page.locator('.success-message')).toBeVisible();
+        // Verify success toast and Invite in Pending List
+        await expect(page.locator('mat-snack-bar-container')).toBeVisible();
         const inviteItem = page.locator('mat-list-item', { hasText: inviteEmail });
         await expect(inviteItem).toBeVisible();
 

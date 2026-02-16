@@ -59,7 +59,8 @@ test.describe('Shop Settings Flow', () => {
 
         // Should NOT be redirected, should show error
         await expect(page).toHaveURL(new RegExp(/.*\/settings/));
-        await expect(page.locator('.error-banner')).toBeVisible();
-        await expect(page.locator('.error-banner')).toContainText('Cannot leave: you are the only owner');
+        const snackbar = page.locator('mat-snack-bar-container');
+        await expect(snackbar).toBeVisible();
+        await expect(snackbar).toContainText('Cannot leave: you are the only owner');
     });
 });

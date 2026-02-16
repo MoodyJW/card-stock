@@ -1,0 +1,35 @@
+<div class="accept-container">
+  <mat-card class="accept-card">
+    <mat-card-header>
+      <mat-card-title>Join Shop</mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      @if (loading()) {
+        <div class="loading-state">
+          <mat-spinner diameter="40"></mat-spinner>
+          <p>Verifying invite...</p>
+        </div>
+      } @else if (error()) {
+        <div class="error-state">
+          <mat-icon class="warn-icon large-icon">error_outline</mat-icon>
+          <h3>Invite Failed</h3>
+          <p>{{ error() }}</p>
+          <a mat-button routerLink="/shop/select">Go to My Shops</a>
+        </div>
+      } @else if (success()) {
+        <div class="success-state">
+          <mat-icon class="large-icon success-icon">check_circle</mat-icon>
+          <h3>Welcome!</h3>
+          <p>You have successfully joined the shop.</p>
+          <button mat-flat-button (click)="goToShop()">Go to Shop</button>
+        </div>
+      } @else {
+        <!-- Initial state / prompt to accept -->
+        <div class="prompt-state">
+          <p>You have been invited to join a shop.</p>
+          <button mat-flat-button (click)="accept()">Accept Invite</button>
+        </div>
+      }
+    </mat-card-content>
+  </mat-card>
+</div>

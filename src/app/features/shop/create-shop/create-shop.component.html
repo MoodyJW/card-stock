@@ -1,0 +1,58 @@
+<div class="create-shop-container">
+  <div class="header">
+    <h1>Create your store</h1>
+    <p class="subtitle">Start managing your card inventory today.</p>
+  </div>
+
+  <mat-card class="shop-form-card">
+    <mat-card-content>
+      @if (error()) {
+        <mat-error class="form-error">{{ error() }}</mat-error>
+      }
+
+      <form [formGroup]="form" (ngSubmit)="onSubmit()">
+        <mat-form-field appearance="outline">
+          <mat-label>Store Name</mat-label>
+          <input
+            matInput
+            formControlName="name"
+            placeholder="e.g. Wildcat Cards"
+            (input)="generateSlug()"
+          />
+          @if (form.controls.name.hasError('required')) {
+            <mat-error>Store name is required</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Store URL (Slug)</mat-label>
+          <span matTextPrefix>cardstock.app/</span>
+          <input matInput formControlName="slug" placeholder="wildcat-cards" />
+          <mat-hint>This will be your unique store identifier.</mat-hint>
+          @if (form.controls.slug.hasError('required')) {
+            <mat-error>Slug is required</mat-error>
+          } @else if (form.controls.slug.hasError('pattern')) {
+            <mat-error>Use lowercase letters, numbers, and hyphens only.</mat-error>
+          }
+        </mat-form-field>
+
+        <div class="actions">
+          <button
+            mat-flat-button
+            type="submit"
+            [disabled]="loading() || form.invalid"
+            class="submit-btn"
+          >
+            @if (loading()) {
+              <mat-spinner diameter="20" />
+            } @else {
+              Create Store
+            }
+          </button>
+
+          <a mat-button routerLink="/shop/select" [disabled]="loading()">Cancel</a>
+        </div>
+      </form>
+    </mat-card-content>
+  </mat-card>
+</div>

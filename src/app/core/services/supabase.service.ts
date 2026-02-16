@@ -91,6 +91,10 @@ export class SupabaseService {
     return { error };
   }
 
+  async rpc(fn: string, params?: Record<string, unknown>) {
+    return this.supabase.rpc(fn, params);
+  }
+
   // Get typed client for direct queries
   get client(): SupabaseClient {
     return this.supabase;

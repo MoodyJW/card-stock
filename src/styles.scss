@@ -35,6 +35,8 @@ body {
 :root {
   // Make background transparent so body gradient shows through
   --mat-sys-background: transparent;
+  --mat-sidenav-content-background-color: transparent;
+  --mat-toolbar-container-background-color: transparent;
 
   // Glass Surfaces: Semi-transparent white
   --mat-sys-surface: rgba(255, 255, 255, 0.05);
@@ -47,6 +49,7 @@ body {
   --mat-sys-surface-container-highest: rgba(255, 255, 255, 0.12);
 
   // Text Colors: Ensure readability on dark gradient
+  --mat-sys-on-background: #ffffff;
   --mat-sys-on-surface: #ffffff;
   --mat-sys-on-surface-variant: rgba(255, 255, 255, 0.7);
 

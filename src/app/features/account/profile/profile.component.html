@@ -1,0 +1,135 @@
+<div class="profile-container">
+  <!-- Profile Info -->
+  <mat-card>
+    <mat-card-header>
+      <mat-card-title>Profile Information</mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      <form [formGroup]="profileForm" (ngSubmit)="updateProfile()">
+        <mat-form-field appearance="outline">
+          <mat-label>Display Name</mat-label>
+          <input matInput formControlName="display_name" placeholder="John Doe" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Avatar URL</mat-label>
+          <input
+            matInput
+            formControlName="avatar_url"
+            placeholder="https://example.com/avatar.jpg"
+          />
+          <mat-hint>Image upload coming soon</mat-hint>
+        </mat-form-field>
+
+        <div class="actions">
+          <button
+            mat-flat-button
+            color="primary"
+            type="submit"
+            [disabled]="loading() || profileForm.invalid"
+          >
+            Save Profile
+          </button>
+        </div>
+      </form>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Email -->
+  <mat-card>
+    <mat-card-header>
+      <mat-card-title>Change Email</mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      <p class="reauth-hint">
+        <mat-icon>info</mat-icon>
+        A confirmation link will be sent to your new email address.
+      </p>
+      <form [formGroup]="emailForm" (ngSubmit)="updateEmail()">
+        <p class="current-email">Current email: {{ currentEmail() }}</p>
+        <mat-form-field appearance="outline">
+          <mat-label>New Email Address</mat-label>
+          <input matInput formControlName="email" type="email" placeholder="new@example.com" />
+          @if (emailForm.get('email')?.hasError('required')) {
+            <mat-error>Email is required</mat-error>
+          }
+          @if (emailForm.get('email')?.hasError('email')) {
+            <mat-error>Invalid email format</mat-error>
+          }
+        </mat-form-field>
+
+        <div class="actions">
+          <button
+            mat-flat-button
+            color="primary"
+            type="submit"
+            [disabled]="loading() || emailForm.invalid"
+          >
+            Update Email
+          </button>
+        </div>
+      </form>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Password -->
+  <mat-card>
+    <mat-card-header>
+      <mat-card-title>Change Password</mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      <p class="reauth-hint">
+        <mat-icon>info</mat-icon>
+        Changing your password will require you to log in again.
+      </p>
+      <form [formGroup]="passwordForm" (ngSubmit)="updatePassword()">
+        <mat-form-field appearance="outline">
+          <mat-label>New Password</mat-label>
+          <input matInput formControlName="password" type="password" />
+          @if (passwordForm.get('password')?.hasError('minlength')) {
+            <mat-error>Must be at least 8 characters</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Confirm Password</mat-label>
+          <input matInput formControlName="confirmPassword" type="password" />
+        </mat-form-field>
+
+        @if (passwordForm.hasError('mismatch') && passwordForm.touched) {
+          <mat-error class="password-mismatch-error"> Passwords do not match </mat-error>
+        }
+
+        <div class="actions">
+          <button
+            mat-flat-button
+            color="primary"
+            type="submit"
+            [disabled]="loading() || passwordForm.invalid"
+          >
+            Change Password
+          </button>
+        </div>
+      </form>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Danger Zone -->
+  <mat-card class="danger-zone">
+    <mat-card-header>
+      <mat-card-title class="danger-title">
+        <mat-icon color="warn">warning</mat-icon>
+        Danger Zone
+      </mat-card-title>
+    </mat-card-header>
+    <mat-card-content class="danger-content">
+      <p>Deleting your account is permanent and cannot be undone.</p>
+
+      <div class="actions">
+        <button mat-stroked-button color="warn" (click)="deleteAccount()" [disabled]="loading()">
+          Delete Account
+        </button>
+      </div>
+    </mat-card-content>
+  </mat-card>
+</div>

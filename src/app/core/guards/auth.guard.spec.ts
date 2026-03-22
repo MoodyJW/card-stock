@@ -37,7 +37,10 @@ describe('authGuard', () => {
     supabase.loading.set(false);
     supabase.isAuthenticated.set(false);
 
-    const result = await executeGuard({} as ActivatedRouteSnapshot, {} as RouterStateSnapshot);
+    const result = await executeGuard(
+      {} as ActivatedRouteSnapshot,
+      { url: '/some-url' } as RouterStateSnapshot,
+    );
 
     expect(result).toBe('login-url-tree');
     expect(router.createUrlTree).toHaveBeenCalledWith(['/auth/login']);
@@ -47,7 +50,10 @@ describe('authGuard', () => {
     supabase.loading.set(false);
     supabase.isAuthenticated.set(true);
 
-    const result = await executeGuard({} as ActivatedRouteSnapshot, {} as RouterStateSnapshot);
+    const result = await executeGuard(
+      {} as ActivatedRouteSnapshot,
+      { url: '/some-url' } as RouterStateSnapshot,
+    );
 
     expect(result).toBe(true);
     expect(router.createUrlTree).not.toHaveBeenCalled();
@@ -57,7 +63,10 @@ describe('authGuard', () => {
     supabase.loading.set(true);
     supabase.isAuthenticated.set(true);
 
-    const resultPromise = executeGuard({} as ActivatedRouteSnapshot, {} as RouterStateSnapshot);
+    const resultPromise = executeGuard(
+      {} as ActivatedRouteSnapshot,
+      { url: '/some-url' } as RouterStateSnapshot,
+    );
 
     // Simulate loading finished
     supabase.loading.set(false);

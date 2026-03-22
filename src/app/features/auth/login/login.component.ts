@@ -53,7 +53,13 @@ export class LoginComponent {
     if (error) {
       this.notify.error(error.message);
     } else {
-      this.router.navigate(['/']);
+      const pendingInvite = localStorage.getItem('pending_invite_url');
+      if (pendingInvite) {
+        localStorage.removeItem('pending_invite_url');
+        this.router.navigateByUrl(pendingInvite);
+      } else {
+        this.router.navigate(['/']);
+      }
     }
   }
 

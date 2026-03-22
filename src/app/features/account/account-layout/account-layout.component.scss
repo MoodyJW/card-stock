@@ -1,0 +1,34 @@
+@use 'theme/utilities' as *;
+
+.account-layout-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  padding: 24px;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.account-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 32px;
+
+  h1 {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 500;
+  }
+}
+
+.account-content {
+  flex: 1;
+}
+
+// Mobile overrides
+@media (max-width: 600px) {
+  .account-layout-container {
+    padding: 16px;
+  }
+}

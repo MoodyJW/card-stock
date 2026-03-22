@@ -1,15 +1,15 @@
-import { Component } from '@angular/core';
+import { Component, computed, inject } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
+import { ShopContextService } from '../../../core/services/shop-context.service';
 
 @Component({
   selector: 'app-bottom-nav',
-  standalone: true,
   imports: [RouterLink, RouterLinkActive, MatIconModule, MatButtonModule],
   template: `
     <nav>
-      <a routerLink="./dashboard" routerLinkActive="active" class="nav-item">
+      <a [routerLink]="basePath() + '/dashboard'" routerLinkActive="active" class="nav-item">
         <mat-icon>dashboard</mat-icon>
         <span>Home</span>
       </a>
@@ -20,12 +20,12 @@ import { MatButtonModule } from '@angular/material/button';
         <span>Inventory</span>
       </a>
 
-      <a routerLink="./team" routerLinkActive="active" class="nav-item">
+      <a [routerLink]="basePath() + '/team'" routerLinkActive="active" class="nav-item">
         <mat-icon>group</mat-icon>
         <span>Team</span>
       </a>
 
-      <a routerLink="./settings" routerLinkActive="active" class="nav-item">
+      <a [routerLink]="basePath() + '/settings'" routerLinkActive="active" class="nav-item">
         <mat-icon>settings</mat-icon>
         <span>Settings</span>
       </a>
@@ -33,4 +33,8 @@ import { MatButtonModule } from '@angular/material/button';
   `,
   styleUrl: './bottom-nav.component.scss',
 })
-export class BottomNavComponent {}
+export class BottomNavComponent {
+  private readonly shopContext = inject(ShopContextService);
+
+  readonly basePath = computed(() => `/shop/${this.shopContext.currentShopSlug()}`);
+}

@@ -1,11 +1,19 @@
 import { inject } from '@angular/core';
-import { CanActivateFn, Router } from '@angular/router';
+import {
+  CanActivateFn,
+  Router,
+  ActivatedRouteSnapshot,
+  RouterStateSnapshot,
+} from '@angular/router';
 import { toObservable } from '@angular/core/rxjs-interop';
 import { firstValueFrom } from 'rxjs';
 import { filter } from 'rxjs/operators';
 import { SupabaseService } from '../services/supabase.service';
 
-export const authGuard: CanActivateFn = async () => {
+export const authGuard: CanActivateFn = async (
+  route: ActivatedRouteSnapshot,
+  state: RouterStateSnapshot,
+) => {
   const supabase = inject(SupabaseService);
   const router = inject(Router);
 
@@ -16,6 +24,11 @@ export const authGuard: CanActivateFn = async () => {
 
   if (supabase.isAuthenticated()) {
     return true;
+  }
+
+  // Preserve invite links across login/register/email-confirmation flow
+  if (state.url.includes('/shop/invite/')) {
+    localStorage.setItem('pending_invite_url', state.url);
   }
 
   return router.createUrlTree(['/auth/login']);

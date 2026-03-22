@@ -46,6 +46,12 @@ export class SupabaseService {
         if (event === 'PASSWORD_RECOVERY') {
           this._passwordRecovery.set(true);
           this.router.navigate(['/auth/reset-password']);
+        } else if (event === 'SIGNED_IN') {
+          const pendingInvite = localStorage.getItem('pending_invite_url');
+          if (pendingInvite) {
+            localStorage.removeItem('pending_invite_url');
+            setTimeout(() => this.router.navigateByUrl(pendingInvite), 0);
+          }
         }
       });
     } finally {

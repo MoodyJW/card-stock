@@ -112,4 +112,29 @@ test.describe('Auth Flow', () => {
         await page.locator('a[href="/auth/login"]').click();
         await expect(page).toHaveURL(/\/auth\/login/);
     });
+
+    test('should sign out via user menu', async ({ page }) => {
+        await page.goto('/auth/login');
+        await page.locator('input[type="email"]').fill('test@test.com');
+        await page.locator('input[type="password"]').fill('password123');
+        await page.locator('button[type="submit"]').click();
+        
+        // Wait for redirect to select store
+        await expect(page).toHaveURL(/\/shop\/select/);
+        
+        // Click User Menu avatar
+        const userMenuButton = page.locator('app-user-menu button').first();
+        await expect(userMenuButton).toBeVisible();
+        await userMenuButton.click();
+        
+        // Click Sign Out
+        const signOutItem = page.locator('button[mat-menu-item]', { hasText: 'Sign Out' });
+        await expect(signOutItem).toBeVisible();
+        await signOutItem.click();
+        
+        // Verify sign out success redirect and toast
+        await expect(page).toHaveURL(/\/auth\/login/);
+        const snackbar = page.locator('mat-snack-bar-container');
+        await expect(snackbar).toContainText('You have been signed out');
+    });
 });

@@ -4,6 +4,8 @@
     <mat-toolbar class="app-toolbar">
       <span class="app-title">{{ currentShopName() }}</span>
       <span class="spacer"></span>
+      <app-user-menu class="mobile-user-menu"></app-user-menu>
+
       <button mat-icon-button [matMenuTriggerFor]="menu">
         <mat-icon>more_vert</mat-icon>
       </button>
@@ -27,15 +29,6 @@
           <mat-icon>swap_horiz</mat-icon>
           <span>Switch Store</span>
         </button>
-        <button mat-menu-item routerLink="/account/profile">
-          <mat-icon>person</mat-icon>
-          <span>Account Settings</span>
-        </button>
-        <mat-divider></mat-divider>
-        <button mat-menu-item (click)="signOut()">
-          <mat-icon>logout</mat-icon>
-          <span>Sign Out</span>
-        </button>
       </mat-menu>
     </mat-toolbar>
 
@@ -54,6 +47,8 @@
       </button>
       <span class="spacer"></span>
       <span class="app-title">{{ currentShopName() }}</span>
+      <span class="spacer"></span>
+      <app-user-menu></app-user-menu>
     </mat-toolbar>
 
     <mat-sidenav-container class="sidenav-container">
@@ -86,15 +81,6 @@
           >
             <mat-icon matListItemIcon>swap_horiz</mat-icon>
             <span matListItemTitle>Switch Store</span>
-          </a>
-          <a mat-list-item routerLink="/account/profile" routerLinkActive="active">
-            <mat-icon matListItemIcon>person</mat-icon>
-            <span matListItemTitle>Account Settings</span>
-          </a>
-          <mat-divider></mat-divider>
-          <a mat-list-item (click)="signOut()" (keyup.enter)="signOut()" tabindex="0">
-            <mat-icon matListItemIcon>logout</mat-icon>
-            <span matListItemTitle>Sign Out</span>
           </a>
         </mat-nav-list>
       </mat-sidenav>

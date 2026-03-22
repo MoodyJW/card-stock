@@ -1,0 +1,28 @@
+<button mat-icon-button [matMenuTriggerFor]="userMenu" class="user-menu-button">
+  @if (avatarUrl(); as url) {
+    <img [src]="url" alt="User avatar" class="avatar-img" />
+  } @else {
+    <mat-icon>account_circle</mat-icon>
+  }
+</button>
+
+<mat-menu #userMenu="matMenu" xPosition="before">
+  <div class="user-info-header">
+    <div class="display-name">{{ displayName() }}</div>
+    <div class="email">{{ email() }}</div>
+  </div>
+
+  <mat-divider></mat-divider>
+
+  <button mat-menu-item routerLink="/account/profile">
+    <mat-icon>person</mat-icon>
+    <span>Account Settings</span>
+  </button>
+
+  <mat-divider></mat-divider>
+
+  <button mat-menu-item (click)="signOut()">
+    <mat-icon>logout</mat-icon>
+    <span>Sign Out</span>
+  </button>
+</mat-menu>

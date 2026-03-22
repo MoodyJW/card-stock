@@ -114,6 +114,7 @@ export class ProfileComponent implements OnInit {
         .eq('user_id', user.id);
 
       if (error) throw error;
+      this.supabase.updateProfileState(this.profileForm.value);
       this.notification.success('Profile updated successfully');
     } catch {
       this.notification.error('Failed to update profile');

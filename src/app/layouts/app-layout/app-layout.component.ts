@@ -1,6 +1,6 @@
 import { Component, computed, inject } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { Router, RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
+import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
 import { MatSidenavModule } from '@angular/material/sidenav';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatButtonModule } from '@angular/material/button';
@@ -11,9 +11,8 @@ import { MatMenuModule } from '@angular/material/menu';
 import { BreakpointObserver } from '@angular/cdk/layout';
 import { map } from 'rxjs/operators';
 import { ShopContextService } from '../../core/services/shop-context.service';
-import { SupabaseService } from '../../core/services/supabase.service';
-import { NotificationService } from '../../core/services/notification.service';
 import { BottomNavComponent } from '../../features/shop/bottom-nav/bottom-nav.component';
+import { UserMenuComponent } from '../../shared/components/user-menu/user-menu.component';
 
 @Component({
   selector: 'app-layout',
@@ -29,14 +28,13 @@ import { BottomNavComponent } from '../../features/shop/bottom-nav/bottom-nav.co
     MatDividerModule,
     MatMenuModule,
     BottomNavComponent,
+    UserMenuComponent,
   ],
   templateUrl: './app-layout.component.html',
   styleUrl: './app-layout.component.scss',
 })
 export class AppLayoutComponent {
   private readonly shopContext = inject(ShopContextService);
-  private readonly supabase = inject(SupabaseService);
-  private readonly router = inject(Router);
   private readonly breakpointObserver = inject(BreakpointObserver);
 
   readonly isMobile = toSignal(
@@ -52,13 +50,4 @@ export class AppLayoutComponent {
     const slug = this.currentShopSlug();
     return slug ? `/shop/${slug}` : null;
   });
-
-  private readonly notification = inject(NotificationService);
-
-  async signOut() {
-    await this.supabase.client.auth.signOut();
-    localStorage.removeItem('last_active_shop');
-    this.notification.info('You have been signed out');
-    this.router.navigate(['/auth/login']);
-  }
 }

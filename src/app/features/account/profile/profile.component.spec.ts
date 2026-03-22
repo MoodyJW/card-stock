@@ -35,6 +35,7 @@ describe('ProfileComponent', () => {
         })),
         rpc: vi.fn(),
       },
+      updateProfileState: vi.fn(),
     };
 
     notificationMock = {

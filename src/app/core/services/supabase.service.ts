@@ -1,7 +1,18 @@
 import { inject, Injectable, signal, computed } from '@angular/core';
 import { Router } from '@angular/router';
-import { createClient, SupabaseClient, User, Session } from '@supabase/supabase-js';
+import {
+  createClient,
+  SupabaseClient,
+  User,
+  Session,
+  AuthChangeEvent,
+} from '@supabase/supabase-js';
 import { environment } from '../../../environments/environment';
+
+export interface UserProfile {
+  display_name?: string;
+  avatar_url?: string;
+}
 
 @Injectable({
   providedIn: 'root',
@@ -12,6 +23,7 @@ export class SupabaseService {
   // Auth state signals
   private readonly _session = signal<Session | null>(null);
   private readonly _user = signal<User | null>(null);
+  private readonly _profile = signal<UserProfile | null>(null);
   private readonly _loading = signal(true);
   private readonly _passwordRecovery = signal(false);
   private readonly router = inject(Router);
@@ -19,6 +31,7 @@ export class SupabaseService {
   // Public readonly signals
   readonly session = this._session.asReadonly();
   readonly user = this._user.asReadonly();
+  readonly profile = this._profile.asReadonly();
   readonly loading = this._loading.asReadonly();
 
   // Computed state
@@ -37,23 +50,35 @@ export class SupabaseService {
       } = await this.supabase.auth.getSession();
       this._session.set(session);
       this._user.set(session?.user ?? null);
+      if (session?.user) {
+        await this.loadProfile(session.user.id);
+      } else {
+        this._profile.set(null);
+      }
 
       // Listen for auth changes
-      this.supabase.auth.onAuthStateChange((event, session) => {
-        this._session.set(session);
-        this._user.set(session?.user ?? null);
-
-        if (event === 'PASSWORD_RECOVERY') {
-          this._passwordRecovery.set(true);
-          this.router.navigate(['/auth/reset-password']);
-        } else if (event === 'SIGNED_IN') {
-          const pendingInvite = localStorage.getItem('pending_invite_url');
-          if (pendingInvite) {
-            localStorage.removeItem('pending_invite_url');
-            setTimeout(() => this.router.navigateByUrl(pendingInvite), 0);
+      this.supabase.auth.onAuthStateChange(
+        async (event: AuthChangeEvent, session: Session | null) => {
+          this._session.set(session);
+          this._user.set(session?.user ?? null);
+          if (session?.user) {
+            await this.loadProfile(session.user.id);
+          } else {
+            this._profile.set(null);
           }
-        }
-      });
+
+          if (event === 'PASSWORD_RECOVERY') {
+            this._passwordRecovery.set(true);
+            this.router.navigate(['/auth/reset-password']);
+          } else if (event === 'SIGNED_IN') {
+            const pendingInvite = localStorage.getItem('pending_invite_url');
+            if (pendingInvite) {
+              localStorage.removeItem('pending_invite_url');
+              setTimeout(() => this.router.navigateByUrl(pendingInvite), 0);
+            }
+          }
+        },
+      );
     } finally {
       this._loading.set(false);
     }
@@ -79,6 +104,7 @@ export class SupabaseService {
     if (!error) {
       this._session.set(null);
       this._user.set(null);
+      this._profile.set(null);
     }
     return { error };
   }
@@ -104,5 +130,19 @@ export class SupabaseService {
   // Get typed client for direct queries
   get client(): SupabaseClient {
     return this.supabase;
+  }
+
+  async loadProfile(userId: string) {
+    const { data } = await this.supabase
+      .from('profiles')
+      .select('display_name, avatar_url')
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    this._profile.set(data || null);
+  }
+
+  updateProfileState(profile: UserProfile) {
+    this._profile.set(profile);
   }
 }

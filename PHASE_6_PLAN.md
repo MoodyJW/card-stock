@@ -107,6 +107,18 @@ Create the TypeScript models and the reactive `InventoryService` that manages in
      buyer_email?: string;
      buyer_notes?: string;
    }
+
+   export interface Transaction {
+     id: string;
+     organization_id: string;
+     inventory_id: string;
+     sold_price: number;
+     sold_at: string;
+     sold_by?: string;
+     buyer_email?: string;
+     buyer_notes?: string;
+     created_at: string;
+   }
    ```
 
 2. **Create `InventoryService`** in `src/app/core/services/inventory.service.ts`
@@ -119,7 +131,10 @@ Create the TypeScript models and the reactive `InventoryService` that manages in
      - `_page = signal(0)`
      - `_pageSize = signal(25)`
    - Public readonly versions of all signals
-   - Computed: `_setNames = computed(() => [...new Set(items().map(i => i.set_name).filter(Boolean))])` for filter dropdowns (or fetch distinctly)
+   - `_distinctSetNames = signal<string[]>([])` — populated by `getDistinctSetNames()`, called on shop change and after add/edit operations
+   - Sort state:
+     - `_sortColumn = signal<string>('created_at')`
+     - `_sortDirection = signal<'asc' | 'desc'>('desc')`
 
    **Constructor effect** — react to shop context:
    ```typescript
@@ -141,10 +156,31 @@ Create the TypeScript models and the reactive `InventoryService` that manages in
    - `async addCard(card: CreateInventoryItem)` — inserts into `inventory` table, sets `created_by`, `organization_id` from context. Optimistic: prepend to `_items`, replace on success, remove on error.
    - `async updateCard(id: string, updates: Partial<CreateInventoryItem>)` — updates row, sets `updated_by`. Optimistic: update in `_items`, revert on error.
    - `async softDeleteCard(id: string)` — sets `deleted_at = now()`. Optimistic: remove from `_items`, re-add on error.
-   - `async markAsSold(params: MarkSoldParams)` — calls `mark_card_sold` RPC. On success: update item status in `_items` to 'sold'.
+   - `async markAsSold(params: MarkSoldParams)` — calls `mark_card_sold` RPC, mapping field names to RPC params:
+     ```typescript
+     const { data, error } = await this.supabase.rpc('mark_card_sold', {
+       p_inventory_id: params.inventory_id,
+       p_sold_price: params.sold_price,
+       p_buyer_email: params.buyer_email ?? null,
+       p_buyer_notes: params.buyer_notes ?? null,
+     });
+     ```
+     On success: update item status in `_items` to 'sold'.
    - `setFilters(filters: InventoryFilters)` — updates `_filters`, resets `_page` to 0, calls `loadInventory()`.
    - `setPage(page: number)` — updates `_page`, calls `loadInventory()`.
-   - `async getDistinctSetNames()` — fetches unique set names for the current org (for filter dropdown).
+   - `setSort(column: string, direction: 'asc' | 'desc')` — updates `_sortColumn` and `_sortDirection`, calls `loadInventory()`.
+   - `async getDistinctSetNames()` — fetches unique set names for the current org (for filter dropdown). Query:
+     ```typescript
+     const { data } = await this.supabase.client
+       .from('inventory')
+       .select('set_name')
+       .eq('organization_id', orgId)
+       .is('deleted_at', null)
+       .not('set_name', 'is', null)
+       .order('set_name');
+     // Deduplicate client-side
+     this._distinctSetNames.set([...new Set(data?.map(d => d.set_name))]);
+     ```
 
    **Query building** (inside `loadInventory`):
    ```typescript
@@ -153,7 +189,7 @@ Create the TypeScript models and the reactive `InventoryService` that manages in
      .select('*', { count: 'exact' })
      .eq('organization_id', orgId)
      .is('deleted_at', null)
-     .order('created_at', { ascending: false });
+     .order(this._sortColumn(), { ascending: this._sortDirection() === 'asc' });
 
    if (filters.status) query = query.eq('status', filters.status);
    if (filters.condition) query = query.eq('condition', filters.condition);
@@ -179,7 +215,7 @@ Create the TypeScript models and the reactive `InventoryService` that manages in
 - All CRUD operations work with optimistic updates
 - Pagination via `.range()` with total count
 - Filters applied to Supabase query correctly
-- All methods return errors via `NotificationService` (toast)
+- Service methods return `{ data, error }` or throw — **components handle toasts** (consistent with existing codebase patterns like `ProfileComponent`). Dialogs and list components inject `NotificationService` and call `notification.success/error()` after service calls.
 
 ---
 
@@ -201,8 +237,11 @@ Build the inventory list page with a Material data table, column sorting, pagina
    }
    ```
 
-2. **Enable the inventory nav link** in `shop-layout.component.html`
-   - Remove the `class="disabled"` and restore `routerLink="./inventory"`
+2. **Enable the inventory nav link** in both navigation components:
+   - **Desktop sidebar** — `src/app/layouts/app-layout/app-layout.component.html`: Remove `class="disabled"` from the Inventory `<a>` tag and add `[routerLink]="basePath + '/inventory'"` and `routerLinkActive="active"`
+   - **Mobile bottom nav** — `src/app/features/shop/bottom-nav/bottom-nav.component.ts`: Change the disabled Inventory `<a>` to an active link with `[routerLink]="basePath() + '/inventory'"` and `routerLinkActive="active"`, remove `class="disabled"`
+   - **Mobile overflow menu** — `src/app/layouts/app-layout/app-layout.component.html`: Add an Inventory `<button mat-menu-item>` to the overflow menu (between Dashboard and Team) with icon `inventory_2`
+   - **Update spec** — `src/app/features/shop/bottom-nav/bottom-nav.component.spec.ts`: Change the "should have Inventory item disabled" test to verify Inventory is now an active nav link with `routerLink`
 
 3. **Create `InventoryListComponent`** — `src/app/features/shop/inventory/inventory-list/`
    - Injects `InventoryService`
@@ -230,7 +269,7 @@ Build the inventory list page with a Material data table, column sorting, pagina
      | Status | `status` | Yes | Color-coded chip |
      | Actions | — | No | Icon buttons: edit, sell, delete |
 
-   - Use `mat-sort` for client-side column sorting (data already loaded for the page)
+   - Use `mat-sort` for **server-side** column sorting — `mat-sort` emits sort changes, the component passes the active sort column + direction to `InventoryService.setSort()`, which rebuilds the Supabase query with the appropriate `.order()` and reloads
    - Rows clickable → open edit dialog (Ticket 4)
    - Status chips:
      - `available` → primary color
@@ -285,7 +324,7 @@ src/app/shared/pipes/
 
 ### Acceptance Criteria
 - Table displays all inventory fields with proper formatting
-- Columns sortable via `mat-sort`
+- Columns sortable via `mat-sort` (server-side — reloads from Supabase with new `.order()`)
 - Pagination works with server-side `.range()`
 - Empty state shown when no inventory
 - Status and condition shown as colored badges/chips
@@ -442,26 +481,40 @@ Build a `MatDialog` form for adding and editing inventory cards. Handles all fie
    - Use `@if (form.controls.grading_company.value)` in template
 
 6. **Submit handling**
-   - Add mode: call `inventoryService.addCard()`, close dialog on success, toast on error
-   - Edit mode: call `inventoryService.updateCard()`, close dialog on success, toast on error
+   - Before sending to the service, strip empty strings to `null` for optional fields (non-nullable form builder returns `''` for empty inputs, but the DB expects `null`):
+     ```typescript
+     const formValue = this.form.getRawValue();
+     const cleaned = Object.fromEntries(
+       Object.entries(formValue).map(([k, v]) => [k, v === '' ? null : v])
+     );
+     ```
+   - Add mode: call `inventoryService.addCard(cleaned)`, close dialog on success, toast on error
+   - Edit mode: call `inventoryService.updateCard(id, cleaned)`, close dialog on success, toast on error
    - Show spinner on submit button while loading
    - Disable form while submitting
 
 7. **Opening the dialog** from `InventoryListComponent`:
    ```typescript
+   private readonly breakpointObserver = inject(BreakpointObserver);
+
+   private get dialogConfig() {
+     const isMobile = this.breakpointObserver.isMatched('(max-width: 599px)');
+     return isMobile
+       ? { maxWidth: '100vw', width: '100%', height: '100%' }
+       : { width: '600px', maxHeight: '90vh' };
+   }
+
    openAddDialog() {
      const ref = this.dialog.open(CardFormDialogComponent, {
        data: { mode: 'add' },
-       width: '600px',
-       maxHeight: '90vh'
+       ...this.dialogConfig
      });
    }
 
    openEditDialog(card: InventoryItem) {
      const ref = this.dialog.open(CardFormDialogComponent, {
        data: { mode: 'edit', card },
-       width: '600px',
-       maxHeight: '90vh'
+       ...this.dialogConfig
      });
    }
    ```
@@ -653,6 +706,19 @@ Implement card deletion with soft delete and a brief undo window via toast.
      // Optimistic remove
      this._items.update(items => items.filter(i => i.id !== id));
 
+     // Commit to DB immediately via RPC (enforces admin/owner permission)
+     const { error } = await this.supabase.rpc('soft_delete_card', {
+       p_inventory_id: id,
+     });
+
+     if (error) {
+       // Rollback on DB error (e.g. permission denied for members)
+       this._items.update(items => [...items, item]);
+       this.notification.error(error.message ?? 'Failed to delete card');
+       return;
+     }
+
+     // Show undo toast
      const snackRef = this.notification.showWithAction('Card deleted', 'Undo', 5000);
 
      const undone = await firstValueFrom(
@@ -664,32 +730,69 @@ Implement card deletion with soft delete and a brief undo window via toast.
      );
 
      if (undone) {
-       // Restore
-       this._items.update(items => [...items, item].sort(/* original order */));
-       this.notification.info('Card restored');
-     } else {
-       // Commit to DB
-       const { error } = await this.supabase.client
+       // Revert the soft delete
+       await this.supabase.client
          .from('inventory')
-         .update({ deleted_at: new Date().toISOString() })
+         .update({ deleted_at: null })
          .eq('id', id);
-       if (error) {
-         // Rollback on DB error
-         this._items.update(items => [...items, item]);
-         this.notification.error('Failed to delete card');
-       }
+       this.loadInventory();
+       this.notification.info('Card restored');
      }
    }
    ```
 
-4. **Add `showWithAction` method to `NotificationService`**
+4. **Deferred commit pattern** — The soft delete should commit to Supabase immediately (not wait for toast dismissal), and the undo should _revert_ the commit. This prevents cards from reappearing if the user navigates away within the 5-second undo window. Updated pattern:
+   - Call `softDeleteCard` RPC immediately (see Task 5 below)
+   - Show undo toast for 5 seconds
+   - If undo clicked: call `.update({ deleted_at: null }).eq('id', id)` to revert, then `loadInventory()`
+   - If toast dismissed: no further DB action needed (already committed)
+
+5. **Add `showWithAction` method to `NotificationService`**
    - Returns the `MatSnackBarRef` so callers can listen to `onAction()`
    - Used for undo pattern
 
-5. **Unit tests**
+6. **New migration: `soft_delete_card` RPC** — `supabase/migrations/YYYYMMDDHHMMSS_soft_delete_card_rpc.sql`
+   The `IMPLEMENTATION_PLAN.md` permission matrix says "Delete cards: Owner YES, Admin YES, Member NO". However, the RLS UPDATE policy allows all members to update rows, including setting `deleted_at`. This RPC enforces the correct permission check:
+   ```sql
+   CREATE OR REPLACE FUNCTION public.soft_delete_card(p_inventory_id uuid)
+   RETURNS void
+   LANGUAGE plpgsql
+   SECURITY DEFINER
+   SET search_path = ''
+   AS $$
+   DECLARE
+     v_org_id uuid;
+   BEGIN
+     SELECT organization_id INTO v_org_id
+     FROM public.inventory
+     WHERE id = p_inventory_id AND deleted_at IS NULL
+     FOR UPDATE;
+
+     IF v_org_id IS NULL THEN
+       RAISE EXCEPTION 'Card not found or already deleted';
+     END IF;
+
+     IF NOT public.is_org_admin_or_owner(v_org_id) THEN
+       RAISE EXCEPTION 'Only admins and owners can delete cards';
+     END IF;
+
+     UPDATE public.inventory
+     SET deleted_at = now()
+     WHERE id = p_inventory_id;
+   END;
+   $$;
+   ```
+   Update `softDeleteCard` in the service to call this RPC instead of a direct `.update()`:
+   ```typescript
+   const { error } = await this.supabase.rpc('soft_delete_card', {
+     p_inventory_id: id,
+   });
+   ```
+
+7. **Unit tests**
    - Test: card removed from signal immediately
-   - Test: undo restores card
-   - Test: timeout commits delete to Supabase
+   - Test: undo restores card and re-fetches
+   - Test: RPC called with correct params
    - Test: DB error rolls back deletion
 
 ### Files Modified
@@ -698,12 +801,18 @@ src/app/core/services/inventory.service.ts   (add softDeleteCard logic)
 src/app/core/services/notification.service.ts (add showWithAction)
 ```
 
+### Files Created
+```
+supabase/migrations/YYYYMMDDHHMMSS_soft_delete_card_rpc.sql
+```
+
 ### Acceptance Criteria
 - Card disappears immediately from list on delete
 - Toast with "Undo" button appears for 5 seconds
-- Clicking "Undo" restores the card
-- Letting toast dismiss commits the soft delete to Supabase
+- Clicking "Undo" restores the card (reverts `deleted_at` via direct update)
+- Soft delete uses `soft_delete_card` RPC (enforces admin/owner-only permission)
 - DB errors restore the card and show error toast
+- Members see delete button disabled or hidden (only admins/owners can delete)
 - Deleted cards never appear in queries (filtered by `deleted_at IS NULL`)
 
 ---
@@ -784,7 +893,7 @@ Ticket 8: E2E Tests               (depends on all above)
 
 **Recommended order:** 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8
 
-Tickets 3, 4, and 5 can be worked in parallel after Ticket 2 since they plug into the list independently.
+Tickets 3, 4, and 5 can be worked in parallel after Ticket 2 since their component files are independent. **However**, all three modify `InventoryListComponent` to wire in (filter bar, dialog opening, grid toggle), so the wiring should be done sequentially or carefully coordinated. Consider having Ticket 2 include placeholder methods like `openAddDialog()` and `openEditDialog()` that are no-ops until Ticket 4 fills them in.
 
 ---
 
@@ -807,14 +916,17 @@ e2e/inventory.spec.ts                                            (Ticket 8)
 e2e/inventory-filters.spec.ts                                    (Ticket 8)
 e2e/inventory-sell.spec.ts                                       (Ticket 8)
 e2e/inventory-delete.spec.ts                                     (Ticket 8)
+supabase/migrations/YYYYMMDDHHMMSS_soft_delete_card_rpc.sql      (Ticket 7)
 ```
 
 ### Modified Files
 ```
 src/app/features/shop/shop.routes.ts                             (Ticket 2 — add inventory route)
-src/app/features/shop/shop-layout/shop-layout.component.html     (Ticket 2 — enable inventory link)
+src/app/layouts/app-layout/app-layout.component.html             (Ticket 2 — enable inventory link in sidebar + overflow menu)
+src/app/features/shop/bottom-nav/bottom-nav.component.ts         (Ticket 2 — enable inventory link in mobile bottom nav)
+src/app/features/shop/bottom-nav/bottom-nav.component.spec.ts    (Ticket 2 — update disabled inventory test)
 src/app/core/services/notification.service.ts                    (Ticket 7 — add showWithAction)
 ```
 
-### No New Migrations Needed
-The `inventory` table, `transactions` table, `mark_card_sold` RPC, and all relevant indexes already exist from Phase 2 migrations. No new database changes required for Phase 6.
+### New Migration
+One new migration is required: `soft_delete_card` RPC (Ticket 7) to enforce admin/owner-only soft delete permissions. All other database objects (`inventory` table, `transactions` table, `mark_card_sold` RPC, indexes) already exist from Phase 2 migrations.

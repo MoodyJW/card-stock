@@ -1,0 +1,80 @@
+@use 'theme/utilities' as *;
+
+.profile-container {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+mat-card {
+  @include glass-surface;
+
+  mat-card-header {
+    margin-bottom: 16px;
+  }
+}
+
+.danger-zone {
+  border-color: var(--mat-sys-error);
+
+  .danger-title {
+    color: var(--mat-sys-error);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .danger-content {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+
+    p {
+      color: var(--mat-sys-on-surface-variant);
+      margin: 0;
+    }
+  }
+}
+
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+
+  mat-form-field {
+    width: 100%;
+  }
+
+  .actions {
+    display: flex;
+    justify-content: flex-end;
+  }
+}
+
+.password-mismatch-error {
+  font-size: 0.75rem;
+  margin-top: -8px;
+  margin-bottom: 16px;
+}
+
+.current-email {
+  color: var(--mat-sys-on-surface-variant);
+  font-size: 0.875rem;
+  margin: 0 0 8px;
+}
+
+.reauth-hint {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.8rem;
+  color: var(--mat-sys-on-surface-variant);
+  margin: 0 0 8px;
+  opacity: 0.8;
+
+  mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+  }
+}

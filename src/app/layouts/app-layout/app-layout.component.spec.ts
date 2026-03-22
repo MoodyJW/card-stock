@@ -29,11 +29,9 @@ describe('AppLayoutComponent', () => {
     };
 
     supabaseMock = {
-      client: {
-        auth: {
-          signOut: vi.fn().mockResolvedValue({ error: null }),
-        },
-      },
+      user: signal({ email: 'test@example.com' }),
+      profile: signal({ display_name: 'Test User', avatar_url: null }),
+      signOut: vi.fn().mockResolvedValue({ error: null }),
     };
 
     breakpointObserverMock = {
@@ -89,14 +87,6 @@ describe('AppLayoutComponent', () => {
     expect(texts.some(t => t?.includes('Team Management'))).toBe(true);
   });
 
-  it('should show Sign Out link', () => {
-    const listItems = fixture.nativeElement.querySelectorAll('mat-nav-list a');
-    const texts = Array.from(listItems).map((el: unknown) =>
-      (el as HTMLElement).textContent?.trim(),
-    );
-    expect(texts.some(t => t?.includes('Sign Out'))).toBe(true);
-  });
-
   it('should not show shop nav when no shop is selected', async () => {
     shopContextMock.currentShop = signal(null);
     shopContextMock.currentShopSlug = signal(null);
@@ -126,6 +116,5 @@ describe('AppLayoutComponent', () => {
     );
     expect(texts.some(t => t?.includes('Dashboard'))).toBe(false);
     expect(texts.some(t => t?.includes('Switch Store'))).toBe(true);
-    expect(texts.some(t => t?.includes('Account Settings'))).toBe(true);
   });
 });

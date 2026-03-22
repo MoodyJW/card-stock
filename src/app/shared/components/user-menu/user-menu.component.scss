@@ -1,0 +1,35 @@
+.user-menu-button {
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border-radius: 50%;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  .avatar-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}
+
+.user-info-header {
+  padding: 16px;
+  outline: none;
+  cursor: default;
+  user-select: none;
+
+  .display-name {
+    font-weight: 500;
+    font-size: 1rem;
+    color: var(--mat-sys-on-surface);
+    margin-bottom: 4px;
+  }
+
+  .email {
+    font-size: 0.875rem;
+    color: var(--mat-sys-on-surface-variant);
+  }
+}

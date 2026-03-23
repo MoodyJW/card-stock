@@ -1,54 +1,89 @@
-# Phase 5, Ticket 5 Code Review — Round 3 (Final)
+# Phase 6, Ticket 1 Code Review — Inventory Models & Service
 
-**Reviewing:** Current uncommitted changes on `feat/phase5.5/toolbar-improvements` implementing Phase 5 Ticket 5 (Logout & User Menu in Toolbar).
-
----
-
-## Previous Issue Verification
-
-All 6 issues from Round 2 have been addressed:
-
-| # | Issue | Status |
-|---|-------|--------|
-| 1 | `signOut()` doesn't clear `_profile` signal | **Fixed** — `this._profile.set(null)` added to `signOut()` |
-| 2 | No unit test for `signOut()` error path | **Fixed** — error path test added, verifies error toast and no navigation |
-| 3 | Dead `class="user-dropdown-menu"` on `<mat-menu>` | **Fixed** — removed |
-| 4 | Unnecessary `CommonModule` import | **Fixed** — removed |
-| 5 | Redundant `standalone: true` | **Fixed** — removed |
-| 6 | Stale `client.auth.signOut` in app-layout spec mock | **Fixed** — mock simplified to service-level `signOut` |
-
-Bonus: `vi.restoreAllMocks()` added to `beforeEach` in user-menu spec for proper test isolation.
+**Reviewing:** New files on `feat/phase-6.1-inventory-service` implementing Phase 6 Ticket 1 (Inventory Models & Service).
 
 ---
 
-## New Issues
+## Medium
 
-None found.
+### 1. `addCard` and `updateCard` don't refresh `getDistinctSetNames()` after success
+
+**Files:** `src/app/core/services/inventory.service.ts:93-148` (addCard), `150-179` (updateCard)
+
+The plan states: "`_distinctSetNames` — populated by `getDistinctSetNames()`, called on shop change **and after add/edit operations**." Currently it's only called in the constructor effect (line 49). If a user adds a card with a new `set_name`, the filter dropdown won't include that set name until they switch shops.
+
+**Fix:** Call `getDistinctSetNames()` after successful add/edit:
+
+```typescript
+// In addCard, after replacing the optimistic item (line 145):
+this.getDistinctSetNames();
+return { data: data as InventoryItem, error: null };
+
+// In updateCard, after replacing with server response (line 177):
+if (updates.set_name !== undefined) {
+  this.getDistinctSetNames();
+}
+return { data: data as InventoryItem, error: null };
+```
+
+### 2. Missing unit test: "effect clears items when shop changes"
+
+**File:** `src/app/core/services/inventory.service.spec.ts`
+
+The plan explicitly lists this test: "Test: effect clears items when shop changes." The spec doesn't verify that changing the `currentShopId` signal triggers the effect to clear `_items`, reset `_page`/`_filters`, and reload.
+
+**Fix:** Add a test:
+```typescript
+describe('shop context effect', () => {
+  it('should clear items and reload when shop changes', async () => {
+    // Load initial data
+    const mockData = [{ id: '1', card_name: 'Charizard' }];
+    createQueryChain({ data: mockData, count: 1 });
+    (supabaseMock['client'] as Record<string, unknown>)['from'] = vi.fn().mockReturnValue(queryChain);
+    await service.loadInventory();
+    expect(service.items().length).toBe(1);
+
+    // Change shop — need to use a writable signal in the mock
+    // The effect should clear items and trigger a reload
+    // (Implementation depends on how the mock signal is set up)
+  });
+});
+```
+
+Note: This test is harder to write with the current mock setup since `shopContextMock.currentShopId` is a readonly signal. The mock would need to use a `WritableSignal` to trigger the effect. Consider using `const shopId = signal('org-1')` and setting `shopContextMock.currentShopId = shopId` so the test can call `shopId.set('org-2')` and then `TestBed.flushEffects()`.
 
 ---
 
-## Acceptance Criteria — All Pass
+## Low
+
+### 3. Search filter doesn't escape LIKE wildcard characters
+
+**File:** `src/app/core/services/inventory.service.ts:76`
+
+```typescript
+if (filters.search) query = query.ilike('card_name', `%${filters.search}%`);
+```
+
+The characters `%` and `_` are LIKE wildcards. If a user searches for a literal `_` or `%` in a card name, they'll get unexpected matches. This is very unlikely to be a real-world problem for Pokemon card names, but worth noting.
+
+---
+
+## Acceptance Criteria
 
 | Criteria | Status |
 |----------|--------|
-| User avatar/icon visible in toolbar on all authenticated pages | PASS |
-| Menu shows display name, email, account link, sign-out | PASS |
-| Sign-out clears all state and redirects to login | PASS |
-| Toast confirms sign-out | PASS |
-| Works on both mobile and desktop | PASS |
+| Service reacts to shop context changes (clears + reloads) | PASS — effect implemented |
+| All CRUD operations work with optimistic updates | PASS — addCard, updateCard, softDeleteCard |
+| Pagination via `.range()` with total count | PASS — uses `{ count: 'exact' }` and `.range()` |
+| Filters applied to Supabase query correctly | PASS — status, condition, set_name, search |
+| Service methods return `{ data, error }` — components handle toasts | PASS — no toast calls in service |
 
-## Task Completion — All Done
+## Summary
 
-| Task | Status |
-|------|--------|
-| 1. Create UserMenuComponent | DONE |
-| 2. Add to AppLayoutComponent (both layouts) | DONE |
-| 3. Add to ShopSelectorComponent (via parent route) | DONE |
-| 4. Add to CreateShopComponent (via parent route) | DONE |
-| 5. Handle sign-out flow | DONE |
-| 6. Unit tests (4 tests: create, signals, signOut success, signOut error) | DONE |
-| 7. E2E test (login, user menu visible, sign out, redirect, toast) | DONE |
+| # | Severity | Issue |
+|---|----------|-------|
+| 1 | Medium | `addCard`/`updateCard` don't call `getDistinctSetNames()` — plan requires it |
+| 2 | Medium | Missing "effect clears items when shop changes" test — plan requires it |
+| 3 | Low | Search filter doesn't escape LIKE wildcards (`%`, `_`) |
 
----
-
-Ticket 5 is complete and ready to commit.
+Models match the plan exactly. Service architecture, signals, methods, and query building all match. No regressions (all new files).

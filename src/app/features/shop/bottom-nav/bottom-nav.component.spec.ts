@@ -27,9 +27,12 @@ describe('BottomNavComponent', () => {
     expect(navItems.length).toBe(4);
   });
 
-  it('should have Inventory item disabled', () => {
-    const inventoryItem = fixture.nativeElement.querySelector('.nav-item.disabled');
+  it('should have Inventory item as active nav link', () => {
+    const navItems = fixture.nativeElement.querySelectorAll('.nav-item');
+    const inventoryItem = Array.from(navItems).find((el: unknown) =>
+      (el as HTMLElement).textContent?.includes('Inventory'),
+    ) as HTMLElement;
     expect(inventoryItem).toBeTruthy();
-    expect(inventoryItem.textContent).toContain('Inventory');
+    expect(inventoryItem.classList.contains('disabled')).toBe(false);
   });
 });

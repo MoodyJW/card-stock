@@ -15,6 +15,10 @@
             <mat-icon>dashboard</mat-icon>
             <span>Dashboard</span>
           </button>
+          <button mat-menu-item [routerLink]="basePath + '/inventory'">
+            <mat-icon>inventory_2</mat-icon>
+            <span>Inventory</span>
+          </button>
           <button mat-menu-item [routerLink]="basePath + '/team'">
             <mat-icon>group</mat-icon>
             <span>Team</span>
@@ -59,7 +63,7 @@
               <mat-icon matListItemIcon>dashboard</mat-icon>
               <span matListItemTitle>Dashboard</span>
             </a>
-            <a mat-list-item class="disabled">
+            <a mat-list-item [routerLink]="basePath + '/inventory'" routerLinkActive="active">
               <mat-icon matListItemIcon>inventory_2</mat-icon>
               <span matListItemTitle>Inventory</span>
             </a>

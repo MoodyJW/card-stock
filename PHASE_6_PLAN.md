@@ -429,7 +429,7 @@ src/app/features/shop/inventory/filter-bar/
 - All filter dropdowns populate correctly
 - Filters combine (AND logic)
 - Clear button resets all filters and reloads
-- Responsive: stacked on mobile or behind expandable panel
+- Responsive: ~~stacked on mobile or behind expandable panel~~ mobile will default to the grid view instead, coming in future ticket
 - Filter changes reset pagination to page 0
 
 ---

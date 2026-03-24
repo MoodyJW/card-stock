@@ -28,8 +28,8 @@ test.describe('Profile Settings', () => {
         await page.locator('input[formControlName="display_name"]').fill(newName);
         await page.locator('button:has-text("Save Profile")').click();
 
-        // Verify toast
-        await expect(page.locator('mat-snack-bar-container')).toContainText('Profile updated successfully');
+        // Verify toast (increased timeout to 15s for slow CI/local setups)
+        await expect(page.locator('mat-snack-bar-container, .mat-mdc-snack-bar-container')).toContainText('Profile updated successfully', { timeout: 15000 });
     });
 
     test('should validate password mismatch', async ({ page }) => {

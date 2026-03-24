@@ -45,10 +45,25 @@
 }
 
 // Loading
-.loading-container {
-  display: flex;
-  justify-content: center;
-  padding: 64px 0;
+.loading-wrapper {
+  position: relative;
+  min-height: 400px;
+
+  &.is-loading {
+    opacity: 0.7;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+  }
+}
+
+.page-loader {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 10;
+  border-top-left-radius: 12px;
+  border-top-right-radius: 12px;
 }
 
 // Empty state
@@ -177,11 +192,6 @@
 }
 
 // Actions
-.action-buttons {
-  display: flex;
-  gap: 0;
-}
-
 .clickable-row {
   cursor: pointer;
 
@@ -221,16 +231,5 @@ mat-paginator {
   .header-actions {
     width: 100%;
     justify-content: space-between;
-  }
-
-  .action-buttons {
-    button {
-      width: 32px;
-      height: 32px;
-
-      mat-icon {
-        font-size: 18px;
-      }
-    }
   }
 }

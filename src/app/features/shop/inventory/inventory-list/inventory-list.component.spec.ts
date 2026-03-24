@@ -57,7 +57,7 @@ describe('InventoryListComponent', () => {
       sortDirection: signal('desc'),
       distinctSetNames: signal([]),
       setSort: vi.fn(),
-      setPage: vi.fn(),
+      setPagination: vi.fn(),
       setFilters: vi.fn(),
       loadInventory: vi.fn(),
     };
@@ -82,11 +82,11 @@ describe('InventoryListComponent', () => {
     expect(emptyCard.textContent).toContain('No cards in inventory yet');
   });
 
-  it('should show loading spinner when loading', () => {
+  it('should show loading progress bar when loading', () => {
     (inventoryServiceMock['loading'] as ReturnType<typeof signal<boolean>>).set(true);
     fixture.detectChanges();
-    const spinner = fixture.nativeElement.querySelector('mat-spinner');
-    expect(spinner).toBeTruthy();
+    const progressBar = fixture.nativeElement.querySelector('mat-progress-bar');
+    expect(progressBar).toBeTruthy();
   });
 
   it('should render table with mock data', () => {
@@ -117,9 +117,9 @@ describe('InventoryListComponent', () => {
     expect(inventoryServiceMock['setSort']).toHaveBeenCalledWith('created_at', 'desc');
   });
 
-  it('should call setPage on paginator change', () => {
-    component.onPageChange({ pageIndex: 2, pageSize: 25, length: 100 });
-    expect(inventoryServiceMock['setPage']).toHaveBeenCalledWith(2);
+  it('should call setPagination on paginator change', () => {
+    component.onPageChange({ pageIndex: 2, pageSize: 50, length: 100 });
+    expect(inventoryServiceMock['setPagination']).toHaveBeenCalledWith(2, 50);
   });
 
   it('should format grade correctly', () => {

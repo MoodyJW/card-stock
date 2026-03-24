@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { CurrencyPipe, TitleCasePipe } from '@angular/common';
 import { MatTableModule } from '@angular/material/table';
 import { MatSortModule, Sort } from '@angular/material/sort';
@@ -8,8 +8,11 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatCardModule } from '@angular/material/card';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatMenuModule } from '@angular/material/menu';
+import { BreakpointObserver } from '@angular/cdk/layout';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { InventoryService } from '../../../../core/services/inventory.service';
 import { InventoryItem } from '../../../../core/models/inventory.model';
 import { ConditionLabelPipe } from '../../../../shared/pipes/condition-label.pipe';
@@ -27,8 +30,9 @@ import { ConditionLabelPipe } from '../../../../shared/pipes/condition-label.pip
     MatButtonModule,
     MatButtonToggleModule,
     MatCardModule,
-    MatProgressSpinnerModule,
+    MatProgressBarModule,
     MatTooltipModule,
+    MatMenuModule,
     ConditionLabelPipe,
   ],
   templateUrl: './inventory-list.component.html',
@@ -36,13 +40,24 @@ import { ConditionLabelPipe } from '../../../../shared/pipes/condition-label.pip
 })
 export class InventoryListComponent {
   private readonly inventoryService = inject(InventoryService);
+  private readonly breakpointObserver = inject(BreakpointObserver);
 
   readonly items = this.inventoryService.items;
   readonly loading = this.inventoryService.loading;
   readonly totalCount = this.inventoryService.totalCount;
   readonly page = this.inventoryService.page;
   readonly pageSize = this.inventoryService.pageSize;
-  readonly displayMode = signal<'table' | 'grid'>('table');
+  readonly sortColumn = this.inventoryService.sortColumn;
+  readonly sortDirection = this.inventoryService.sortDirection;
+
+  readonly isMobile = toSignal(this.breakpointObserver.observe('(max-width: 767px)'), {
+    initialValue: { matches: false, breakpoints: {} },
+  });
+
+  readonly userDisplayMode = signal<'table' | 'grid'>('table');
+  readonly displayMode = computed(() =>
+    this.isMobile().matches ? 'grid' : this.userDisplayMode(),
+  );
 
   readonly displayedColumns = [
     'card_name',
@@ -67,7 +82,7 @@ export class InventoryListComponent {
   }
 
   onPageChange(event: PageEvent): void {
-    this.inventoryService.setPage(event.pageIndex);
+    this.inventoryService.setPagination(event.pageIndex, event.pageSize);
   }
 
   formatGrade(item: InventoryItem): string {

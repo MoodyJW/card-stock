@@ -1,7 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { signal } from '@angular/core';
-import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { InventoryListComponent } from './inventory-list.component';
 import { InventoryService } from '../../../../core/services/inventory.service';
 import { InventoryItem } from '../../../../core/models/inventory.model';
@@ -60,10 +59,11 @@ describe('InventoryListComponent', () => {
       setPagination: vi.fn(),
       setFilters: vi.fn(),
       loadInventory: vi.fn(),
+      getDistinctSetNames: vi.fn(),
     };
 
     await TestBed.configureTestingModule({
-      imports: [InventoryListComponent, NoopAnimationsModule],
+      imports: [InventoryListComponent],
       providers: [{ provide: InventoryService, useValue: inventoryServiceMock }],
     }).compileComponents();
 

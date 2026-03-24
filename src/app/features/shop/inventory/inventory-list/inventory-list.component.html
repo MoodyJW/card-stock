@@ -23,14 +23,17 @@
         </mat-button-toggle-group>
       }
 
-      <button mat-flat-button class="add-card-btn" (click)="openAddDialog()">
+      <button mat-flat-button color="primary" (click)="openAddDialog()">
         <mat-icon>add</mat-icon>
         Add Card
       </button>
     </div>
   </header>
 
-  <!-- Filter bar placeholder (Ticket 3) -->
+  <app-inventory-filter-bar
+    [setNames]="distinctSetNames()"
+    (filtersChanged)="onFiltersChange($event)"
+  ></app-inventory-filter-bar>
 
   <div class="loading-wrapper" [class.is-loading]="loading()">
     @if (loading()) {

@@ -14,8 +14,9 @@ import { MatMenuModule } from '@angular/material/menu';
 import { BreakpointObserver } from '@angular/cdk/layout';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { InventoryService } from '../../../../core/services/inventory.service';
-import { InventoryItem } from '../../../../core/models/inventory.model';
+import { InventoryFilters, InventoryItem } from '../../../../core/models/inventory.model';
 import { ConditionLabelPipe } from '../../../../shared/pipes/condition-label.pipe';
+import { FilterBarComponent } from '../filter-bar/filter-bar.component';
 
 @Component({
   selector: 'app-inventory-list',
@@ -34,6 +35,7 @@ import { ConditionLabelPipe } from '../../../../shared/pipes/condition-label.pip
     MatTooltipModule,
     MatMenuModule,
     ConditionLabelPipe,
+    FilterBarComponent,
   ],
   templateUrl: './inventory-list.component.html',
   styleUrl: './inventory-list.component.scss',
@@ -42,6 +44,10 @@ export class InventoryListComponent {
   private readonly inventoryService = inject(InventoryService);
   private readonly breakpointObserver = inject(BreakpointObserver);
 
+  constructor() {
+    this.inventoryService.getDistinctSetNames();
+  }
+
   readonly items = this.inventoryService.items;
   readonly loading = this.inventoryService.loading;
   readonly totalCount = this.inventoryService.totalCount;
@@ -49,6 +55,7 @@ export class InventoryListComponent {
   readonly pageSize = this.inventoryService.pageSize;
   readonly sortColumn = this.inventoryService.sortColumn;
   readonly sortDirection = this.inventoryService.sortDirection;
+  readonly distinctSetNames = this.inventoryService.distinctSetNames;
 
   readonly isMobile = toSignal(this.breakpointObserver.observe('(max-width: 767px)'), {
     initialValue: { matches: false, breakpoints: {} },
@@ -83,6 +90,10 @@ export class InventoryListComponent {
 
   onPageChange(event: PageEvent): void {
     this.inventoryService.setPagination(event.pageIndex, event.pageSize);
+  }
+
+  onFiltersChange(filters: InventoryFilters): void {
+    this.inventoryService.setFilters(filters);
   }
 
   formatGrade(item: InventoryItem): string {

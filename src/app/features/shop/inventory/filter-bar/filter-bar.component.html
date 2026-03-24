@@ -1,0 +1,98 @@
+@if (isMobile().matches) {
+  <mat-expansion-panel class="mobile-filters-panel" elevation="0">
+    <mat-expansion-panel-header>
+      <mat-panel-title>
+        <mat-icon class="panel-icon">filter_list</mat-icon>
+        Filters
+        @if (activeFilterCount > 0) {
+          <span
+            class="filter-badge"
+            matBadge="{{ activeFilterCount }}"
+            matBadgeSize="small"
+            matBadgeColor="accent"
+          ></span>
+        }
+      </mat-panel-title>
+    </mat-expansion-panel-header>
+
+    <ng-container *ngTemplateOutlet="filterControls"></ng-container>
+
+    <div class="mobile-actions">
+      <button
+        mat-stroked-button
+        color="warn"
+        (click)="clearFilters()"
+        [disabled]="activeFilterCount === 0"
+      >
+        Clear All
+      </button>
+    </div>
+  </mat-expansion-panel>
+} @else {
+  <div class="desktop-filters">
+    <ng-container *ngTemplateOutlet="filterControls"></ng-container>
+    <button
+      mat-icon-button
+      class="clear-btn"
+      (click)="clearFilters()"
+      [disabled]="activeFilterCount === 0"
+      matTooltip="Clear filters"
+    >
+      <mat-icon>filter_list_off</mat-icon>
+    </button>
+  </div>
+}
+
+<ng-template #filterControls>
+  <form [formGroup]="filterForm" class="filter-form" [class.is-mobile]="isMobile().matches">
+    <!-- Search -->
+    <mat-form-field appearance="outline" class="search-field">
+      <mat-label>Search cards</mat-label>
+      <input matInput formControlName="search" placeholder="Pikachu, Charizard..." />
+      <mat-icon matPrefix>search</mat-icon>
+      @if (filterForm.get('search')?.value) {
+        <button
+          mat-icon-button
+          matSuffix
+          (click)="filterForm.get('search')?.setValue('')"
+          aria-label="Clear"
+        >
+          <mat-icon>close</mat-icon>
+        </button>
+      }
+    </mat-form-field>
+
+    <!-- Set -->
+    <mat-form-field appearance="outline" class="select-field">
+      <mat-label>Set</mat-label>
+      <mat-select formControlName="set_name">
+        <mat-option [value]="null">All Sets</mat-option>
+        @for (set of setNames; track set) {
+          <mat-option [value]="set">{{ set }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <!-- Status -->
+    <mat-form-field appearance="outline" class="select-field">
+      <mat-label>Status</mat-label>
+      <mat-select formControlName="status">
+        <mat-option [value]="null">All Statuses</mat-option>
+        @for (status of statuses; track status.value) {
+          <mat-option [value]="status.value">{{ status.label }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <!-- Condition -->
+    <mat-form-field appearance="outline" class="select-field">
+      <mat-label>Condition</mat-label>
+      <mat-select formControlName="condition">
+        <mat-option [value]="null">All Conditions</mat-option>
+        @for (condition of conditions; track condition.value) {
+          <mat-option [value]="condition.value">{{ condition.label }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+  </form>
+</ng-template>

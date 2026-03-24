@@ -1,0 +1,192 @@
+<div class="inventory-container">
+  <!-- Header -->
+  <header class="page-header">
+    <div class="header-left">
+      <h1>Inventory</h1>
+      @if (totalCount() > 0) {
+        <span class="item-count">{{ totalCount() }} cards</span>
+      }
+    </div>
+    <div class="header-actions">
+      @if (!isMobile().matches) {
+        <mat-button-toggle-group
+          [value]="userDisplayMode()"
+          (change)="userDisplayMode.set($event.value)"
+          hideSingleSelectionIndicator
+        >
+          <mat-button-toggle value="table" matTooltip="Table view">
+            <mat-icon>view_list</mat-icon>
+          </mat-button-toggle>
+          <mat-button-toggle value="grid" matTooltip="Grid view">
+            <mat-icon>grid_view</mat-icon>
+          </mat-button-toggle>
+        </mat-button-toggle-group>
+      }
+
+      <button mat-flat-button class="add-card-btn" (click)="openAddDialog()">
+        <mat-icon>add</mat-icon>
+        Add Card
+      </button>
+    </div>
+  </header>
+
+  <!-- Filter bar placeholder (Ticket 3) -->
+
+  <div class="loading-wrapper" [class.is-loading]="loading()">
+    @if (loading()) {
+      <mat-progress-bar mode="indeterminate" class="page-loader"></mat-progress-bar>
+    }
+
+    @if (items().length === 0 && !loading()) {
+      <!-- Empty state -->
+      <mat-card class="empty-state-card">
+        <mat-card-content>
+          <mat-icon class="empty-icon">inventory_2</mat-icon>
+          <h2>No cards in inventory yet</h2>
+          <p>Start building your collection by adding your first card.</p>
+          <button mat-flat-button class="add-card-btn" (click)="openAddDialog()">
+            <mat-icon>add</mat-icon>
+            Add Your First Card
+          </button>
+        </mat-card-content>
+      </mat-card>
+    } @else if (items().length > 0) {
+      <!-- Data Table -->
+      @if (displayMode() === 'table') {
+        <div class="table-wrapper">
+          <table
+            mat-table
+            [dataSource]="items()"
+            matSort
+            [matSortActive]="sortColumn()"
+            [matSortDirection]="sortDirection()"
+            (matSortChange)="onSortChange($event)"
+          >
+            <!-- Card Name -->
+            <ng-container matColumnDef="card_name">
+              <th mat-header-cell *matHeaderCellDef mat-sort-header>Card Name</th>
+              <td mat-cell *matCellDef="let item" class="cell-card-name">{{ item.card_name }}</td>
+            </ng-container>
+
+            <!-- Set -->
+            <ng-container matColumnDef="set_name">
+              <th mat-header-cell *matHeaderCellDef mat-sort-header>Set</th>
+              <td mat-cell *matCellDef="let item">
+                <span class="set-name">{{ item.set_name || '—' }}</span>
+                @if (item.set_code) {
+                  <span class="set-code">{{ item.set_code }}</span>
+                }
+              </td>
+            </ng-container>
+
+            <!-- Card Number -->
+            <ng-container matColumnDef="card_number">
+              <th mat-header-cell *matHeaderCellDef>#</th>
+              <td mat-cell *matCellDef="let item">{{ item.card_number || '—' }}</td>
+            </ng-container>
+
+            <!-- Condition -->
+            <ng-container matColumnDef="condition">
+              <th mat-header-cell *matHeaderCellDef mat-sort-header>Condition</th>
+              <td mat-cell *matCellDef="let item">
+                <span class="condition-badge" [attr.data-condition]="item.condition">
+                  {{ item.condition | conditionLabel }}
+                </span>
+              </td>
+            </ng-container>
+
+            <!-- Grade -->
+            <ng-container matColumnDef="grade">
+              <th mat-header-cell *matHeaderCellDef mat-sort-header>Grade</th>
+              <td mat-cell *matCellDef="let item">{{ formatGrade(item) }}</td>
+            </ng-container>
+
+            <!-- Purchase Price -->
+            <ng-container matColumnDef="purchase_price">
+              <th mat-header-cell *matHeaderCellDef mat-sort-header>Purchase</th>
+              <td mat-cell *matCellDef="let item">
+                {{ item.purchase_price !== null ? (item.purchase_price | currency) : '—' }}
+              </td>
+            </ng-container>
+
+            <!-- Selling Price -->
+            <ng-container matColumnDef="selling_price">
+              <th mat-header-cell *matHeaderCellDef mat-sort-header>Price</th>
+              <td mat-cell *matCellDef="let item">
+                {{ item.selling_price !== null ? (item.selling_price | currency) : '—' }}
+              </td>
+            </ng-container>
+
+            <!-- Status -->
+            <ng-container matColumnDef="status">
+              <th mat-header-cell *matHeaderCellDef mat-sort-header>Status</th>
+              <td mat-cell *matCellDef="let item">
+                <span class="status-chip" [attr.data-status]="item.status">
+                  {{ item.status | titlecase }}
+                </span>
+              </td>
+            </ng-container>
+
+            <!-- Actions -->
+            <ng-container matColumnDef="actions">
+              <th mat-header-cell *matHeaderCellDef>Actions</th>
+              <td mat-cell *matCellDef="let item">
+                <button
+                  mat-icon-button
+                  [matMenuTriggerFor]="actionMenu"
+                  (click)="$event.stopPropagation()"
+                >
+                  <mat-icon>more_vert</mat-icon>
+                </button>
+                <mat-menu #actionMenu="matMenu">
+                  <button mat-menu-item (click)="openEditDialog(item)">
+                    <mat-icon>edit</mat-icon>
+                    <span>Edit</span>
+                  </button>
+                  @if (item.status === 'available') {
+                    <button mat-menu-item (click)="openSellDialog(item)">
+                      <mat-icon>sell</mat-icon>
+                      <span>Mark as Sold</span>
+                    </button>
+                  }
+                  <button mat-menu-item (click)="deleteCard(item)">
+                    <mat-icon>delete</mat-icon>
+                    <span>Delete</span>
+                  </button>
+                </mat-menu>
+              </td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></tr>
+            <tr
+              mat-row
+              *matRowDef="let row; columns: displayedColumns"
+              (click)="openEditDialog(row)"
+              class="clickable-row"
+            ></tr>
+          </table>
+        </div>
+      } @else {
+        <!-- Grid placeholder (Ticket 5) -->
+        <div class="grid-placeholder">
+          <mat-card>
+            <mat-card-content>
+              <mat-icon>grid_view</mat-icon>
+              <p>Grid view coming soon</p>
+            </mat-card-content>
+          </mat-card>
+        </div>
+      }
+
+      <!-- Paginator -->
+      <mat-paginator
+        [length]="totalCount()"
+        [pageSize]="pageSize()"
+        [pageIndex]="page()"
+        [pageSizeOptions]="pageSizeOptions"
+        (page)="onPageChange($event)"
+        showFirstLastButtons
+      ></mat-paginator>
+    }
+  </div>
+</div>

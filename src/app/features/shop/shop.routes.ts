@@ -32,6 +32,13 @@ export default [
           import('./dashboard/dashboard.component').then(m => m.DashboardComponent),
       },
       {
+        path: 'inventory',
+        loadComponent: () =>
+          import('./inventory/inventory-list/inventory-list.component').then(
+            m => m.InventoryListComponent,
+          ),
+      },
+      {
         path: 'team',
         loadComponent: () => import('./team/team.component').then(m => m.TeamComponent),
       },

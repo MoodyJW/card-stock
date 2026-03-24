@@ -14,8 +14,7 @@ import { ShopContextService } from '../../../core/services/shop-context.service'
         <span>Home</span>
       </a>
 
-      <!-- Inventory: Placeholder/Disabled -->
-      <a class="nav-item disabled">
+      <a [routerLink]="basePath() + '/inventory'" routerLinkActive="active" class="nav-item">
         <mat-icon>inventory_2</mat-icon>
         <span>Inventory</span>
       </a>

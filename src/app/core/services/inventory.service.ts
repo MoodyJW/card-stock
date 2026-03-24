@@ -241,6 +241,12 @@ export class InventoryService {
     this.loadInventory();
   }
 
+  setPagination(page: number, pageSize: number): void {
+    this._page.set(page);
+    this._pageSize.set(pageSize);
+    this.loadInventory();
+  }
+
   setSort(column: string, direction: 'asc' | 'desc'): void {
     this._sortColumn.set(column);
     this._sortDirection.set(direction);

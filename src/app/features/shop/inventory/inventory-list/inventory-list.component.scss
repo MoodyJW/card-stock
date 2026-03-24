@@ -1,0 +1,235 @@
+@use 'theme/utilities' as *;
+
+.inventory-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+// Header
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  gap: 16px;
+  flex-wrap: wrap;
+
+  h1 {
+    margin: 0;
+    font-size: 1.75rem;
+    font-weight: 600;
+  }
+
+  .item-count {
+    font-size: 0.875rem;
+    color: var(--mat-sys-on-surface-variant);
+    margin-left: 12px;
+  }
+}
+
+.header-left {
+  display: flex;
+  align-items: baseline;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.add-card-btn {
+  background: var(--mat-sys-primary);
+  color: var(--mat-sys-on-primary);
+}
+
+// Loading
+.loading-wrapper {
+  position: relative;
+  min-height: 400px;
+
+  &.is-loading {
+    opacity: 0.7;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+  }
+}
+
+.page-loader {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 10;
+  border-top-left-radius: 12px;
+  border-top-right-radius: 12px;
+}
+
+// Empty state
+.empty-state-card {
+  max-width: 480px;
+  margin: 48px auto;
+  text-align: center;
+  @include glass-surface;
+
+  mat-card-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    padding: 48px 24px;
+  }
+
+  .empty-icon {
+    font-size: 64px;
+    width: 64px;
+    height: 64px;
+    color: var(--mat-sys-on-surface-variant);
+    opacity: 0.5;
+  }
+
+  h2 {
+    margin: 0;
+    font-size: 1.25rem;
+  }
+
+  p {
+    margin: 0;
+    color: var(--mat-sys-on-surface-variant);
+  }
+}
+
+// Table
+.table-wrapper {
+  overflow-x: auto;
+  @include glass-surface;
+  border-radius: 12px;
+
+  table {
+    width: 100%;
+    min-width: 900px;
+  }
+}
+
+.cell-card-name {
+  font-weight: 600;
+}
+
+.set-name {
+  display: block;
+}
+
+.set-code {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+// Condition badges
+.condition-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  white-space: nowrap;
+
+  &[data-condition='mint'] {
+    background: rgba(16, 185, 129, 0.15);
+    color: #10b981;
+  }
+
+  &[data-condition='near_mint'] {
+    background: rgba(59, 130, 246, 0.15);
+    color: #3b82f6;
+  }
+
+  &[data-condition='lightly_played'] {
+    background: rgba(245, 158, 11, 0.15);
+    color: #f59e0b;
+  }
+
+  &[data-condition='moderately_played'] {
+    background: rgba(249, 115, 22, 0.15);
+    color: #f97316;
+  }
+
+  &[data-condition='heavily_played'] {
+    background: rgba(239, 68, 68, 0.15);
+    color: #ef4444;
+  }
+
+  &[data-condition='damaged'] {
+    background: rgba(220, 38, 38, 0.15);
+    color: #dc2626;
+  }
+}
+
+// Status chips
+.status-chip {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: capitalize;
+
+  &[data-status='available'] {
+    background: rgba(16, 185, 129, 0.15);
+    color: #10b981;
+  }
+
+  &[data-status='reserved'] {
+    background: rgba(245, 158, 11, 0.15);
+    color: #f59e0b;
+  }
+
+  &[data-status='sold'] {
+    background: rgba(156, 163, 175, 0.15);
+    color: #9ca3af;
+  }
+}
+
+// Actions
+.clickable-row {
+  cursor: pointer;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.03);
+  }
+}
+
+// Grid placeholder
+.grid-placeholder {
+  text-align: center;
+  padding: 48px 0;
+
+  mat-card-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 32px;
+    color: var(--mat-sys-on-surface-variant);
+  }
+}
+
+// Paginator
+mat-paginator {
+  background: transparent;
+  margin-top: 8px;
+}
+
+// Responsive
+@media (max-width: 767px) {
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .header-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+}

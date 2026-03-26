@@ -93,17 +93,16 @@ describe('ProfileComponent', () => {
       component.profileForm.setValue({ display_name: 'New Name', avatar_url: 'new-avatar' });
 
       supabaseMock.client.auth.getUser.mockResolvedValue({ data: { user: { id: 'uid' } } });
-      const eqMock = vi.fn().mockResolvedValue({ error: null });
-      const updateMock = vi.fn(() => ({ eq: eqMock }));
-      supabaseMock.client.from.mockReturnValue({ update: updateMock });
+      const upsertMock = vi.fn().mockResolvedValue({ error: null });
+      supabaseMock.client.from.mockReturnValue({ upsert: upsertMock });
 
       await component.updateProfile();
 
-      expect(updateMock).toHaveBeenCalledWith({
+      expect(upsertMock).toHaveBeenCalledWith({
+        user_id: 'uid',
         display_name: 'New Name',
         avatar_url: 'new-avatar',
       });
-      expect(eqMock).toHaveBeenCalledWith('user_id', 'uid');
       expect(notificationMock.success).toHaveBeenCalledWith('Profile updated successfully');
     });
   });

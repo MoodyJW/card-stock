@@ -108,15 +108,17 @@ export class ProfileComponent implements OnInit {
       } = await this.supabase.client.auth.getUser();
       if (!user) throw new Error('No user');
 
-      const { error } = await this.supabase.client
-        .from('profiles')
-        .update(this.profileForm.value)
-        .eq('user_id', user.id);
+      const { error } = await this.supabase.client.from('profiles').upsert({
+        user_id: user.id,
+        display_name: this.profileForm.value.display_name || null,
+        avatar_url: this.profileForm.value.avatar_url || null,
+      });
 
       if (error) throw error;
       this.supabase.updateProfileState(this.profileForm.value);
       this.notification.success('Profile updated successfully');
-    } catch {
+    } catch (e: unknown) {
+      console.error('Profile update error:', e);
       this.notification.error('Failed to update profile');
     } finally {
       this.loading.set(false);

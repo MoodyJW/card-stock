@@ -1,0 +1,60 @@
+.form-section {
+  margin-bottom: 16px;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.section-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--mat-sys-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0 0 12px 0;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+mat-form-field {
+  width: 100%;
+}
+
+.form-row {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+
+  > * {
+    flex: 1;
+  }
+
+  .flex-2 {
+    flex: 2;
+  }
+
+  .flex-1 {
+    flex: 1;
+  }
+
+  &.align-center {
+    align-items: center;
+  }
+}
+
+.foil-toggle {
+  padding-top: 16px;
+  flex: 0 0 auto;
+}
+
+@media (max-width: 599px) {
+  mat-dialog-content {
+    flex: 1;
+  }
+
+  .form-row {
+    flex-direction: column;
+    gap: 0;
+  }
+}

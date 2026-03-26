@@ -92,3 +92,13 @@ body {
   background-color: var(--mat-sys-surface-container-high) !important;
   color: #fff !important;
 }
+
+// Fullscreen dialog overrides
+.fullscreen-dialog {
+  --mdc-dialog-container-shape: 12px;
+
+  .mat-mdc-dialog-content {
+    max-height: none !important;
+    flex: 1 !important;
+  }
+}

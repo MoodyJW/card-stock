@@ -23,10 +23,12 @@
         </mat-button-toggle-group>
       }
 
-      <button mat-flat-button color="primary" (click)="openAddDialog()">
-        <mat-icon>add</mat-icon>
-        Add Card
-      </button>
+      @if (!isMobile().matches) {
+        <button mat-flat-button color="primary" (click)="openAddDialog()">
+          <mat-icon>add</mat-icon>
+          Add Card
+        </button>
+      }
     </div>
   </header>
 
@@ -192,4 +194,11 @@
       ></mat-paginator>
     }
   </div>
+
+  <!-- Mobile FAB -->
+  @if (isMobile().matches) {
+    <button mat-fab class="add-fab" color="primary" (click)="openAddDialog()" aria-label="Add card">
+      <mat-icon>add</mat-icon>
+    </button>
+  }
 </div>

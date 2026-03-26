@@ -221,6 +221,14 @@ mat-paginator {
   margin-top: 8px;
 }
 
+// Mobile FAB
+.add-fab {
+  position: fixed;
+  bottom: calc(80px + env(safe-area-inset-bottom));
+  right: 16px;
+  z-index: 999;
+}
+
 // Responsive
 @media (max-width: 767px) {
   .page-header {

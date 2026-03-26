@@ -1,0 +1,184 @@
+<h2 mat-dialog-title>{{ title }}</h2>
+
+<mat-dialog-content>
+  <form [formGroup]="form" id="card-form" (ngSubmit)="onSubmit()">
+    <!-- Section 1: Card Identity -->
+    <section class="form-section">
+      <h3 class="section-title">Card Identity</h3>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Card Name</mat-label>
+        <input matInput formControlName="card_name" placeholder="e.g. Charizard VMAX" />
+        @if (form.controls.card_name.hasError('required')) {
+          <mat-error>Card name is required</mat-error>
+        }
+      </mat-form-field>
+
+      <div class="form-row">
+        <mat-form-field appearance="outline" class="flex-2">
+          <mat-label>Set Name</mat-label>
+          <input
+            matInput
+            formControlName="set_name"
+            [matAutocomplete]="setAuto"
+            placeholder="e.g. Scarlet & Violet"
+          />
+          <mat-autocomplete #setAuto="matAutocomplete">
+            @for (name of filteredSetNames$ | async; track name) {
+              <mat-option [value]="name">{{ name }}</mat-option>
+            }
+          </mat-autocomplete>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="flex-1">
+          <mat-label>Set Code</mat-label>
+          <input matInput formControlName="set_code" placeholder="e.g. SV1" />
+        </mat-form-field>
+      </div>
+
+      <div class="form-row">
+        <mat-form-field appearance="outline">
+          <mat-label>Card Number</mat-label>
+          <input matInput formControlName="card_number" placeholder="e.g. 025/198" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Rarity</mat-label>
+          <input matInput formControlName="rarity" placeholder="e.g. Ultra Rare" />
+        </mat-form-field>
+      </div>
+
+      <div class="form-row align-center">
+        <mat-form-field appearance="outline" class="flex-2">
+          <mat-label>Language</mat-label>
+          <mat-select formControlName="language">
+            @for (lang of languages; track lang) {
+              <mat-option [value]="lang">{{ lang }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-slide-toggle formControlName="is_foil" class="foil-toggle"> Foil </mat-slide-toggle>
+      </div>
+    </section>
+
+    <!-- Section 2: Condition & Grading -->
+    <section class="form-section">
+      <h3 class="section-title">Condition & Grading</h3>
+
+      <div class="form-row">
+        <mat-form-field appearance="outline">
+          <mat-label>Condition</mat-label>
+          <mat-select formControlName="condition">
+            @for (c of conditions; track c.value) {
+              <mat-option [value]="c.value">{{ c.label }}</mat-option>
+            }
+          </mat-select>
+          @if (form.controls.condition.hasError('required')) {
+            <mat-error>Condition is required</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Status</mat-label>
+          <mat-select formControlName="status">
+            @for (s of statuses; track s.value) {
+              <mat-option [value]="s.value">{{ s.label }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+      </div>
+
+      <div class="form-row">
+        <mat-form-field appearance="outline">
+          <mat-label>Grading Company</mat-label>
+          <mat-select formControlName="grading_company">
+            <mat-option value="">None</mat-option>
+            @for (gc of gradingCompanies; track gc.value) {
+              <mat-option [value]="gc.value">{{ gc.label }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        @if (form.controls.grading_company.value) {
+          <mat-form-field appearance="outline">
+            <mat-label>Grade</mat-label>
+            <input
+              matInput
+              type="number"
+              formControlName="grade"
+              min="0"
+              max="10"
+              step="0.5"
+              placeholder="e.g. 9.5"
+            />
+          </mat-form-field>
+        }
+      </div>
+    </section>
+
+    <!-- Section 3: Pricing -->
+    <section class="form-section">
+      <h3 class="section-title">Pricing</h3>
+
+      <div class="form-row">
+        <mat-form-field appearance="outline">
+          <mat-label>Purchase Price</mat-label>
+          <span matTextPrefix>$&nbsp;</span>
+          <input
+            matInput
+            type="number"
+            formControlName="purchase_price"
+            min="0"
+            step="0.01"
+            placeholder="0.00"
+          />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Selling Price</mat-label>
+          <span matTextPrefix>$&nbsp;</span>
+          <input
+            matInput
+            type="number"
+            formControlName="selling_price"
+            min="0"
+            step="0.01"
+            placeholder="0.00"
+          />
+        </mat-form-field>
+      </div>
+    </section>
+
+    <!-- Section 4: Notes -->
+    <section class="form-section">
+      <h3 class="section-title">Notes</h3>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Notes</mat-label>
+        <textarea
+          matInput
+          formControlName="notes"
+          rows="3"
+          maxlength="500"
+          placeholder="Any additional notes..."
+        ></textarea>
+        <mat-hint align="end">{{ form.controls.notes.value.length }} / 500</mat-hint>
+        @if (form.controls.notes.hasError('maxlength')) {
+          <mat-error>Maximum 500 characters</mat-error>
+        }
+      </mat-form-field>
+    </section>
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button mat-dialog-close [disabled]="loading()">Cancel</button>
+  <button mat-flat-button type="submit" form="card-form" [disabled]="loading() || form.invalid">
+    @if (loading()) {
+      <mat-spinner diameter="20"></mat-spinner>
+    } @else {
+      {{ submitLabel }}
+    }
+  </button>
+</mat-dialog-actions>

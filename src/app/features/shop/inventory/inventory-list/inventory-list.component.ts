@@ -22,6 +22,7 @@ import {
   CardFormDialogComponent,
   CardFormDialogData,
 } from '../card-form-dialog/card-form-dialog.component';
+import { InventoryGridComponent } from '../inventory-grid/inventory-grid.component';
 
 @Component({
   selector: 'app-inventory-list',
@@ -41,6 +42,7 @@ import {
     MatMenuModule,
     ConditionLabelPipe,
     FilterBarComponent,
+    InventoryGridComponent,
   ],
   templateUrl: './inventory-list.component.html',
   styleUrl: './inventory-list.component.scss',

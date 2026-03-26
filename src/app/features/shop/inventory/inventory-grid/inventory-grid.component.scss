@@ -1,0 +1,187 @@
+@use 'theme/utilities' as *;
+
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+
+  @media (min-width: 768px) {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  @media (min-width: 1200px) {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.card-tile {
+  position: relative;
+  cursor: pointer;
+  @include glass-surface;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--card-stock-depth-2);
+  }
+
+  &.is-sold {
+    opacity: 0.6;
+  }
+}
+
+// Status chip (top-right)
+.status-chip {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: capitalize;
+  z-index: 1;
+
+  &[data-status='available'] {
+    background: rgba(16, 185, 129, 0.15);
+    color: #10b981;
+  }
+
+  &[data-status='reserved'] {
+    background: rgba(245, 158, 11, 0.15);
+    color: #f59e0b;
+  }
+
+  &[data-status='sold'] {
+    background: rgba(156, 163, 175, 0.15);
+    color: #9ca3af;
+  }
+}
+
+mat-card-content {
+  padding: 16px !important;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.card-name {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  line-height: 1.3;
+  padding-right: 60px; // leave room for status chip
+}
+
+.card-set {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--mat-sys-on-surface-variant);
+
+  .card-number {
+    margin-left: 4px;
+    opacity: 0.7;
+  }
+}
+
+// Badges
+.badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+.condition-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.7rem;
+  font-weight: 500;
+  white-space: nowrap;
+
+  &[data-condition='mint'] {
+    background: rgba(16, 185, 129, 0.15);
+    color: #10b981;
+  }
+
+  &[data-condition='near_mint'] {
+    background: rgba(59, 130, 246, 0.15);
+    color: #3b82f6;
+  }
+
+  &[data-condition='lightly_played'] {
+    background: rgba(245, 158, 11, 0.15);
+    color: #f59e0b;
+  }
+
+  &[data-condition='moderately_played'] {
+    background: rgba(249, 115, 22, 0.15);
+    color: #f97316;
+  }
+
+  &[data-condition='heavily_played'] {
+    background: rgba(239, 68, 68, 0.15);
+    color: #ef4444;
+  }
+
+  &[data-condition='damaged'] {
+    background: rgba(220, 38, 38, 0.15);
+    color: #dc2626;
+  }
+}
+
+.foil-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  background: linear-gradient(135deg, rgba(168, 85, 247, 0.2), rgba(236, 72, 153, 0.2));
+  color: #c084fc;
+
+  mat-icon {
+    font-size: 14px;
+    width: 14px;
+    height: 14px;
+  }
+}
+
+.grade-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  background: rgba(99, 102, 241, 0.15);
+  color: #818cf8;
+}
+
+// Price
+.price-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.selling-price {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--mat-sys-primary);
+}
+
+.no-price {
+  font-size: 0.85rem;
+  color: var(--mat-sys-on-surface-variant);
+  opacity: 0.6;
+}
+
+.purchase-price {
+  font-size: 0.75rem;
+  color: var(--mat-sys-on-surface-variant);
+}

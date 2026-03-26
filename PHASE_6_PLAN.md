@@ -549,7 +549,7 @@ src/app/features/shop/inventory/card-form-dialog/
 - Form validates required fields (card_name, condition)
 - Successful add/edit shows toast and closes dialog
 - Error shows toast and keeps dialog open
-- Mobile: dialog uses `maxWidth: '100vw'`, `width: '100%'` on small screens
+- Mobile: dialog uses `maxWidth: '96vw'`, `width: '96vw'` on small screens
 
 ---
 

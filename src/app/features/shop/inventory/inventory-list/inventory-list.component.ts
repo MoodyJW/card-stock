@@ -13,10 +13,15 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatMenuModule } from '@angular/material/menu';
 import { BreakpointObserver } from '@angular/cdk/layout';
 import { toSignal } from '@angular/core/rxjs-interop';
+import { MatDialog } from '@angular/material/dialog';
 import { InventoryService } from '../../../../core/services/inventory.service';
 import { InventoryFilters, InventoryItem } from '../../../../core/models/inventory.model';
 import { ConditionLabelPipe } from '../../../../shared/pipes/condition-label.pipe';
 import { FilterBarComponent } from '../filter-bar/filter-bar.component';
+import {
+  CardFormDialogComponent,
+  CardFormDialogData,
+} from '../card-form-dialog/card-form-dialog.component';
 
 @Component({
   selector: 'app-inventory-list',
@@ -43,6 +48,7 @@ import { FilterBarComponent } from '../filter-bar/filter-bar.component';
 export class InventoryListComponent {
   private readonly inventoryService = inject(InventoryService);
   private readonly breakpointObserver = inject(BreakpointObserver);
+  private readonly dialog = inject(MatDialog);
 
   constructor() {
     this.inventoryService.getDistinctSetNames();
@@ -101,10 +107,18 @@ export class InventoryListComponent {
     return `${item.grading_company.toUpperCase()} ${item.grade}`;
   }
 
-  // Stub methods for later tickets
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  openEditDialog(_item: InventoryItem): void {
-    // Ticket 4
+  openAddDialog(): void {
+    this.dialog.open(CardFormDialogComponent, {
+      data: { mode: 'add' } satisfies CardFormDialogData,
+      ...this.dialogConfig,
+    });
+  }
+
+  openEditDialog(item: InventoryItem): void {
+    this.dialog.open(CardFormDialogComponent, {
+      data: { mode: 'edit', card: item } satisfies CardFormDialogData,
+      ...this.dialogConfig,
+    });
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -117,7 +131,10 @@ export class InventoryListComponent {
     // Ticket 7
   }
 
-  openAddDialog(): void {
-    // Ticket 4
+  private get dialogConfig() {
+    const isMobile = this.breakpointObserver.isMatched('(max-width: 599px)');
+    return isMobile
+      ? { width: '96vw', height: '96vh', panelClass: 'fullscreen-dialog' }
+      : { width: '600px', maxHeight: '90vh' };
   }
 }

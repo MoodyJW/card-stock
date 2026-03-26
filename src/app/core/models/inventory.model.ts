@@ -47,6 +47,7 @@ export interface CreateInventoryItem {
   grade?: number;
   purchase_price?: number;
   selling_price?: number;
+  status?: InventoryStatus;
   notes?: string;
 }
 

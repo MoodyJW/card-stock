@@ -172,26 +172,23 @@
           </table>
         </div>
       } @else {
-        <!-- Grid placeholder (Ticket 5) -->
-        <div class="grid-placeholder">
-          <mat-card>
-            <mat-card-content>
-              <mat-icon>grid_view</mat-icon>
-              <p>Grid view coming soon</p>
-            </mat-card-content>
-          </mat-card>
-        </div>
+        <app-inventory-grid
+          [items]="items()"
+          (cardClicked)="openEditDialog($event)"
+        ></app-inventory-grid>
       }
 
       <!-- Paginator -->
-      <mat-paginator
-        [length]="totalCount()"
-        [pageSize]="pageSize()"
-        [pageIndex]="page()"
-        [pageSizeOptions]="pageSizeOptions"
-        (page)="onPageChange($event)"
-        showFirstLastButtons
-      ></mat-paginator>
+      @if (displayMode() === 'table') {
+        <mat-paginator
+          [length]="totalCount()"
+          [pageSize]="pageSize()"
+          [pageIndex]="page()"
+          [pageSizeOptions]="pageSizeOptions"
+          (page)="onPageChange($event)"
+          showFirstLastButtons
+        ></mat-paginator>
+      }
     }
   </div>
 

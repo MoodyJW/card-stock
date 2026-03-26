@@ -1,0 +1,59 @@
+<div class="card-grid">
+  @for (item of items(); track item.id) {
+    <mat-card
+      class="card-tile"
+      (click)="cardClicked.emit(item)"
+      [class.is-sold]="item.status === 'sold'"
+    >
+      <!-- Status chip -->
+      <span class="status-chip" [attr.data-status]="item.status">
+        {{ item.status | titlecase }}
+      </span>
+
+      <mat-card-content>
+        <!-- Card name -->
+        <h3 class="card-name">{{ item.card_name }}</h3>
+
+        <!-- Set info -->
+        @if (item.set_name || item.card_number) {
+          <p class="card-set">
+            {{ item.set_name || '' }}
+            @if (item.card_number) {
+              <span class="card-number">#{{ item.card_number }}</span>
+            }
+          </p>
+        }
+
+        <!-- Badges row -->
+        <div class="badges">
+          <span class="condition-badge" [attr.data-condition]="item.condition">
+            {{ item.condition | conditionLabel }}
+          </span>
+
+          @if (item.is_foil) {
+            <span class="foil-badge">
+              <mat-icon>auto_awesome</mat-icon>
+              Foil
+            </span>
+          }
+
+          @if (formatGrade(item); as grade) {
+            <span class="grade-badge">{{ grade }}</span>
+          }
+        </div>
+
+        <!-- Price -->
+        <div class="price-row">
+          @if (item.selling_price !== null && item.selling_price !== undefined) {
+            <span class="selling-price">{{ item.selling_price | currency }}</span>
+          } @else {
+            <span class="no-price">No price</span>
+          }
+          @if (item.purchase_price !== null && item.purchase_price !== undefined) {
+            <span class="purchase-price">Paid {{ item.purchase_price | currency }}</span>
+          }
+        </div>
+      </mat-card-content>
+    </mat-card>
+  }
+</div>

@@ -212,3 +212,13 @@ mat-card-content {
     height: 18px;
   }
 }
+
+.delete-btn {
+  align-self: flex-end;
+  opacity: 0.5;
+
+  &:hover {
+    opacity: 1;
+    color: var(--mat-sys-error);
+  }
+}

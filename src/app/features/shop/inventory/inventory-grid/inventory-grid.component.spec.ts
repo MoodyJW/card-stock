@@ -147,10 +147,22 @@ describe('InventoryGridComponent', () => {
     expect(spy).toHaveBeenCalledWith(mockItems[0]);
   });
 
-  it('should not show action buttons for sold cards', () => {
+  it('should not show reserve/sell buttons for sold cards', () => {
     const { fixture } = createComponent();
     const cards = fixture.nativeElement.querySelectorAll('.card-tile');
-    // Third card (index 2) is sold
-    expect(cards[2].querySelector('.card-actions')).toBeFalsy();
+    // Third card (index 2) is sold — should have delete but not reserve/sell
+    expect(cards[2].querySelector('.action-btn')).toBeFalsy();
+    expect(cards[2].querySelector('.delete-btn')).toBeTruthy();
+  });
+
+  it('should emit deleteClicked on delete button click', () => {
+    const { fixture, component } = createComponent();
+    const spy = vi.fn();
+    component.deleteClicked.subscribe(spy);
+
+    const deleteBtn = fixture.nativeElement.querySelector('.delete-btn');
+    deleteBtn.click();
+
+    expect(spy).toHaveBeenCalledWith(mockItems[0]);
   });
 });

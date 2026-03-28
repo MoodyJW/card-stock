@@ -52,4 +52,17 @@ describe('NotificationService', () => {
       panelClass: 'snackbar-info',
     });
   });
+
+  it('showWithAction should return snackbar ref with action button', () => {
+    const mockRef = { onAction: vi.fn() };
+    openSpy.mockReturnValue(mockRef);
+
+    const ref = service.showWithAction('Card deleted', 'Undo', 5000);
+
+    expect(openSpy).toHaveBeenCalledWith('Card deleted', 'Undo', {
+      duration: 5000,
+      panelClass: 'snackbar-info',
+    });
+    expect(ref).toBe(mockRef);
+  });
 });

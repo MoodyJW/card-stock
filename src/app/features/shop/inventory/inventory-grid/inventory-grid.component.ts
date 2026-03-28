@@ -24,6 +24,7 @@ export class InventoryGridComponent {
   readonly cardClicked = output<InventoryItem>();
   readonly sellClicked = output<InventoryItem>();
   readonly reserveClicked = output<InventoryItem>();
+  readonly deleteClicked = output<InventoryItem>();
 
   formatGrade(item: InventoryItem): string | null {
     if (!item.grading_company || item.grade == null) return null;

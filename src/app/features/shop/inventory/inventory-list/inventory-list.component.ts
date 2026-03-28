@@ -146,9 +146,22 @@ export class InventoryListComponent {
     }
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  deleteCard(_item: InventoryItem): void {
-    // Ticket 7
+  async deleteCard(item: InventoryItem): Promise<void> {
+    const { error } = await this.inventoryService.softDeleteCard(item.id);
+    if (error) {
+      this.notify.error('Failed to delete card');
+      return;
+    }
+
+    const snackRef = this.notify.showWithAction('Card deleted', 'Undo', 5000);
+    snackRef.onAction().subscribe(async () => {
+      const { error: restoreError } = await this.inventoryService.restoreDeletedCard(item.id);
+      if (restoreError) {
+        this.notify.error('Failed to restore card');
+      } else {
+        this.notify.info('Card restored');
+      }
+    });
   }
 
   private get dialogConfig() {

@@ -55,8 +55,8 @@
         </div>
 
         <!-- Actions -->
-        @if (item.status !== 'sold') {
-          <div class="card-actions">
+        <div class="card-actions">
+          @if (item.status !== 'sold') {
             <button
               mat-stroked-button
               class="action-btn"
@@ -75,8 +75,15 @@
                 Sell
               </button>
             }
-          </div>
-        }
+          }
+          <button
+            mat-icon-button
+            class="delete-btn"
+            (click)="deleteClicked.emit(item); $event.stopPropagation()"
+          >
+            <mat-icon>delete</mat-icon>
+          </button>
+        </div>
       </mat-card-content>
     </mat-card>
   }

@@ -60,6 +60,9 @@ describe('InventoryListComponent', () => {
       setFilters: vi.fn(),
       loadInventory: vi.fn(),
       getDistinctSetNames: vi.fn(),
+      softDeleteCard: vi.fn().mockResolvedValue({ error: null }),
+      restoreDeletedCard: vi.fn().mockResolvedValue({ error: null }),
+      toggleReserved: vi.fn().mockResolvedValue({ error: null }),
     };
 
     await TestBed.configureTestingModule({
@@ -134,5 +137,10 @@ describe('InventoryListComponent', () => {
 
     const paginator = fixture.nativeElement.querySelector('mat-paginator');
     expect(paginator).toBeTruthy();
+  });
+
+  it('should call softDeleteCard on deleteCard', async () => {
+    await component.deleteCard(mockItems[0]);
+    expect(inventoryServiceMock['softDeleteCard']).toHaveBeenCalledWith('1');
   });
 });

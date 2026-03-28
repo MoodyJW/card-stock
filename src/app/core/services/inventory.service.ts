@@ -197,19 +197,29 @@ export class InventoryService {
     this._items.update(items => items.filter(i => i.id !== id));
     this._totalCount.update(c => c - 1);
 
-    const { error } = await this.supabase.client
-      .from('inventory')
-      .update({ deleted_at: new Date().toISOString() })
-      .eq('id', id);
+    const { error } = await this.supabase.rpc('soft_delete_card', {
+      p_inventory_id: id,
+    });
 
     if (error) {
-      // Rollback
-      this._items.update(items => [...items, original]);
-      this._totalCount.update(c => c + 1);
+      // Rollback by reloading server state (preserves sort order & pagination)
+      await this.loadInventory();
       return { error };
     }
 
     return { error: null };
+  }
+
+  async restoreDeletedCard(id: string): Promise<{ error: unknown }> {
+    const { error } = await this.supabase.rpc('restore_deleted_card', {
+      p_inventory_id: id,
+    });
+
+    if (!error) {
+      await this.loadInventory();
+    }
+
+    return { error };
   }
 
   async markAsSold(params: MarkSoldParams): Promise<{ data: unknown; error: unknown }> {

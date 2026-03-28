@@ -216,7 +216,7 @@ describe('InventoryService', () => {
   });
 
   describe('softDeleteCard', () => {
-    it('should remove item optimistically and rollback on error', async () => {
+    it('should call soft_delete_card RPC with correct params', async () => {
       // Seed an item
       const seedItem = {
         id: 'card-del',
@@ -236,19 +236,53 @@ describe('InventoryService', () => {
       await service.loadInventory();
       expect(service.items().length).toBe(1);
 
-      // Setup delete to fail
-      const updateChain = createQueryChain({ data: null, error: { message: 'Delete failed' } });
-      updateChain['eq'] = vi
-        .fn()
-        .mockResolvedValue({ data: null, error: { message: 'Delete failed' } });
+      await service.softDeleteCard('card-del');
+
+      expect(supabaseMock['rpc']).toHaveBeenCalledWith('soft_delete_card', {
+        p_inventory_id: 'card-del',
+      });
+      expect(service.items().length).toBe(0);
+    });
+
+    it('should rollback on RPC error', async () => {
+      const seedItem = {
+        id: 'card-del2',
+        organization_id: 'org-1',
+        card_name: 'DeleteMe2',
+        language: 'English',
+        is_foil: false,
+        condition: 'near_mint' as const,
+        status: 'available' as const,
+        created_at: '',
+        updated_at: '',
+      };
+      createQueryChain({ data: [seedItem], count: 1 });
       (supabaseMock['client'] as Record<string, unknown>)['from'] = vi
         .fn()
         .mockReturnValue(queryChain);
+      await service.loadInventory();
+      expect(service.items().length).toBe(1);
 
-      const result = await service.softDeleteCard('card-del');
+      // Make RPC fail
+      (supabaseMock['rpc'] as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+        data: null,
+        error: { message: 'Permission denied' },
+      });
+
+      const result = await service.softDeleteCard('card-del2');
 
       expect(result.error).toBeTruthy();
       expect(service.items().length).toBe(1);
+    });
+  });
+
+  describe('restoreDeletedCard', () => {
+    it('should call restore_deleted_card RPC and reload inventory', async () => {
+      await service.restoreDeletedCard('card-restore');
+
+      expect(supabaseMock['rpc']).toHaveBeenCalledWith('restore_deleted_card', {
+        p_inventory_id: 'card-restore',
+      });
     });
   });
 

@@ -19,7 +19,6 @@ import {
   CreateInventoryItem,
   GradingCompany,
   InventoryItem,
-  InventoryStatus,
 } from '../../../../core/models/inventory.model';
 
 export interface CardFormDialogData {
@@ -65,7 +64,6 @@ export class CardFormDialogComponent {
     condition: ['near_mint' as string, [Validators.required]],
     grading_company: ['' as string],
     grade: [{ value: null as number | null, disabled: true }],
-    status: ['available' as string, [Validators.required]],
     purchase_price: [null as number | null],
     selling_price: [null as number | null],
     notes: ['', [Validators.maxLength(500)]],
@@ -90,12 +88,6 @@ export class CardFormDialogComponent {
     { value: 'moderately_played', label: 'Moderately Played' },
     { value: 'heavily_played', label: 'Heavily Played' },
     { value: 'damaged', label: 'Damaged' },
-  ];
-
-  readonly statuses: { value: InventoryStatus; label: string }[] = [
-    { value: 'available', label: 'Available' },
-    { value: 'reserved', label: 'Reserved' },
-    { value: 'sold', label: 'Sold' },
   ];
 
   readonly gradingCompanies: { value: GradingCompany; label: string }[] = [
@@ -134,7 +126,6 @@ export class CardFormDialogComponent {
         language: card.language ?? 'English',
         is_foil: card.is_foil,
         condition: card.condition,
-        status: card.status,
         grading_company: (card.grading_company as string) ?? '',
         purchase_price: card.purchase_price ?? null,
         selling_price: card.selling_price ?? null,

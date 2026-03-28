@@ -71,7 +71,6 @@ describe('CardFormDialogComponent', () => {
     expect(component.form.controls.language.value).toBe('English');
     expect(component.form.controls.is_foil.value).toBe(false);
     expect(component.form.controls.grading_company.value).toBe('');
-    expect(component.form.controls.status.value).toBe('available');
     expect(component.title).toBe('Add Card');
     expect(component.submitLabel).toBe('Add Card');
   });
@@ -87,7 +86,6 @@ describe('CardFormDialogComponent', () => {
     expect(component.form.controls.language.value).toBe('Japanese');
     expect(component.form.controls.is_foil.value).toBe(true);
     expect(component.form.controls.condition.value).toBe('mint');
-    expect(component.form.controls.status.value).toBe('available');
     expect(component.form.controls.grading_company.value).toBe('psa');
     expect(component.form.controls.grade.value).toBe(10);
     expect(component.form.controls.purchase_price.value).toBe(150);

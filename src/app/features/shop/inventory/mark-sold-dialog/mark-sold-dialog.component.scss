@@ -1,0 +1,57 @@
+.card-summary {
+  margin-bottom: 16px;
+  padding: 12px 16px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.card-name {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.card-set {
+  margin: 4px 0 0;
+  font-size: 0.85rem;
+  color: var(--mat-sys-on-surface-variant);
+
+  .card-number {
+    margin-left: 4px;
+    opacity: 0.7;
+  }
+}
+
+.card-price {
+  margin: 4px 0 0;
+  font-size: 0.85rem;
+  color: var(--mat-sys-primary);
+  font-weight: 500;
+}
+
+.warning-text {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 0 0 16px;
+  padding: 12px;
+  border-radius: 8px;
+  background: rgba(245, 158, 11, 0.1);
+  border: 1px solid rgba(245, 158, 11, 0.2);
+  color: #fbbf24;
+  font-size: 0.85rem;
+  line-height: 1.5;
+
+  mat-icon {
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+}
+
+mat-form-field {
+  width: 100%;
+}

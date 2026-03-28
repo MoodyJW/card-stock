@@ -17,6 +17,8 @@
 .card-tile {
   position: relative;
   cursor: pointer;
+  min-width: 0;
+  overflow: hidden;
   @include glass-surface;
   transition:
     transform 0.15s ease,
@@ -73,12 +75,17 @@ mat-card-content {
   font-weight: 600;
   line-height: 1.3;
   padding-right: 60px; // leave room for status chip
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .card-set {
   margin: 0;
   font-size: 0.8rem;
   color: var(--mat-sys-on-surface-variant);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 
   .card-number {
     margin-left: 4px;
@@ -164,8 +171,9 @@ mat-card-content {
 // Price
 .price-row {
   display: flex;
+  flex-wrap: wrap;
   align-items: baseline;
-  gap: 8px;
+  gap: 4px 8px;
   margin-top: 4px;
 }
 
@@ -184,4 +192,23 @@ mat-card-content {
 .purchase-price {
   font-size: 0.75rem;
   color: var(--mat-sys-on-surface-variant);
+}
+
+// Action buttons
+.card-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.action-btn {
+  width: 100%;
+  font-size: 0.8rem;
+
+  mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+  }
 }

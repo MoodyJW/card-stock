@@ -123,4 +123,34 @@ describe('InventoryGridComponent', () => {
     expect(badge).toBeTruthy();
     expect(badge.textContent.trim()).toBe('Mint');
   });
+
+  it('should emit sellClicked on sell button click', () => {
+    const { fixture, component } = createComponent();
+    const spy = vi.fn();
+    component.sellClicked.subscribe(spy);
+
+    const sellBtn = fixture.nativeElement.querySelector('.sell-btn');
+    sellBtn.click();
+
+    expect(spy).toHaveBeenCalledWith(mockItems[0]);
+  });
+
+  it('should emit reserveClicked on reserve button click', () => {
+    const { fixture, component } = createComponent();
+    const spy = vi.fn();
+    component.reserveClicked.subscribe(spy);
+
+    const actionBtns = fixture.nativeElement.querySelectorAll('.action-btn');
+    // First action-btn on first card is the reserve button
+    actionBtns[0].click();
+
+    expect(spy).toHaveBeenCalledWith(mockItems[0]);
+  });
+
+  it('should not show action buttons for sold cards', () => {
+    const { fixture } = createComponent();
+    const cards = fixture.nativeElement.querySelectorAll('.card-tile');
+    // Third card (index 2) is sold
+    expect(cards[2].querySelector('.card-actions')).toBeFalsy();
+  });
 });

@@ -230,6 +230,31 @@ export class InventoryService {
     return { data, error };
   }
 
+  async toggleReserved(item: InventoryItem): Promise<{ error: unknown }> {
+    const newStatus = item.status === 'reserved' ? 'available' : 'reserved';
+
+    // Optimistic update
+    this._items.update(items =>
+      items.map(i =>
+        i.id === item.id ? { ...i, status: newStatus as InventoryItem['status'] } : i,
+      ),
+    );
+
+    const { error } = await this.supabase.client
+      .from('inventory')
+      .update({ status: newStatus })
+      .eq('id', item.id);
+
+    if (error) {
+      // Rollback
+      this._items.update(items =>
+        items.map(i => (i.id === item.id ? { ...i, status: item.status } : i)),
+      );
+    }
+
+    return { error };
+  }
+
   setFilters(filters: InventoryFilters): void {
     this._filters.set(filters);
     this._page.set(0);

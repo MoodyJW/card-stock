@@ -15,6 +15,7 @@ import { BreakpointObserver } from '@angular/cdk/layout';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { MatDialog } from '@angular/material/dialog';
 import { InventoryService } from '../../../../core/services/inventory.service';
+import { NotificationService } from '../../../../core/services/notification.service';
 import { InventoryFilters, InventoryItem } from '../../../../core/models/inventory.model';
 import { ConditionLabelPipe } from '../../../../shared/pipes/condition-label.pipe';
 import { FilterBarComponent } from '../filter-bar/filter-bar.component';
@@ -23,6 +24,10 @@ import {
   CardFormDialogData,
 } from '../card-form-dialog/card-form-dialog.component';
 import { InventoryGridComponent } from '../inventory-grid/inventory-grid.component';
+import {
+  MarkSoldDialogComponent,
+  MarkSoldDialogData,
+} from '../mark-sold-dialog/mark-sold-dialog.component';
 
 @Component({
   selector: 'app-inventory-list',
@@ -51,6 +56,7 @@ export class InventoryListComponent {
   private readonly inventoryService = inject(InventoryService);
   private readonly breakpointObserver = inject(BreakpointObserver);
   private readonly dialog = inject(MatDialog);
+  private readonly notify = inject(NotificationService);
 
   constructor() {
     this.inventoryService.getDistinctSetNames();
@@ -123,9 +129,21 @@ export class InventoryListComponent {
     });
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  openSellDialog(_item: InventoryItem): void {
-    // Ticket 6
+  openSellDialog(item: InventoryItem): void {
+    this.dialog.open(MarkSoldDialogComponent, {
+      data: { card: item } satisfies MarkSoldDialogData,
+      ...this.dialogConfig,
+    });
+  }
+
+  async toggleReserved(item: InventoryItem): Promise<void> {
+    const { error } = await this.inventoryService.toggleReserved(item);
+    if (error) {
+      this.notify.error('Failed to update status');
+    } else {
+      const label = item.status === 'reserved' ? 'available' : 'reserved';
+      this.notify.success(`Card marked as ${label}`);
+    }
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars

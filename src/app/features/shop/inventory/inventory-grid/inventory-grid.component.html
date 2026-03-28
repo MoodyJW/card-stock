@@ -53,6 +53,30 @@
             <span class="purchase-price">Paid {{ item.purchase_price | currency }}</span>
           }
         </div>
+
+        <!-- Actions -->
+        @if (item.status !== 'sold') {
+          <div class="card-actions">
+            <button
+              mat-stroked-button
+              class="action-btn"
+              (click)="reserveClicked.emit(item); $event.stopPropagation()"
+            >
+              <mat-icon>{{ item.status === 'reserved' ? 'lock_open' : 'lock' }}</mat-icon>
+              {{ item.status === 'reserved' ? 'Unreserve' : 'Reserve' }}
+            </button>
+            @if (item.status === 'available') {
+              <button
+                mat-stroked-button
+                class="action-btn sell-btn"
+                (click)="sellClicked.emit(item); $event.stopPropagation()"
+              >
+                <mat-icon>sell</mat-icon>
+                Sell
+              </button>
+            }
+          </div>
+        }
       </mat-card-content>
     </mat-card>
   }

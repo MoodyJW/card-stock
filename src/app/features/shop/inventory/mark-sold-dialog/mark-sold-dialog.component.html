@@ -1,0 +1,77 @@
+<h2 mat-dialog-title>Mark as Sold</h2>
+
+<mat-dialog-content>
+  <!-- Card summary -->
+  <section class="card-summary">
+    <h3 class="card-name">{{ card.card_name }}</h3>
+    @if (card.set_name) {
+      <p class="card-set">
+        {{ card.set_name }}
+        @if (card.card_number) {
+          <span class="card-number">#{{ card.card_number }}</span>
+        }
+      </p>
+    }
+    @if (card.selling_price !== null && card.selling_price !== undefined) {
+      <p class="card-price">Listed at {{ card.selling_price | currency }}</p>
+    }
+  </section>
+
+  <p class="warning-text">
+    <mat-icon>warning</mat-icon>
+    This will mark the card as sold and create a transaction record. This action cannot be undone.
+  </p>
+
+  <form [formGroup]="form" id="sell-form" (ngSubmit)="onSubmit()">
+    <mat-form-field appearance="outline">
+      <mat-label>Sold Price</mat-label>
+      <span matTextPrefix>$&nbsp;</span>
+      <input
+        matInput
+        type="number"
+        formControlName="sold_price"
+        min="0"
+        step="0.01"
+        placeholder="0.00"
+      />
+      @if (form.controls.sold_price.hasError('required')) {
+        <mat-error>Sold price is required</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Buyer Email</mat-label>
+      <input matInput type="email" formControlName="buyer_email" placeholder="buyer@example.com" />
+      @if (form.controls.buyer_email.hasError('email')) {
+        <mat-error>Enter a valid email address</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Buyer Notes</mat-label>
+      <textarea
+        matInput
+        formControlName="buyer_notes"
+        rows="3"
+        placeholder="Any notes about the sale..."
+      ></textarea>
+    </mat-form-field>
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button mat-dialog-close [disabled]="loading()">Cancel</button>
+  <button
+    mat-flat-button
+    color="primary"
+    type="submit"
+    form="sell-form"
+    [disabled]="loading() || form.invalid"
+  >
+    @if (loading()) {
+      <mat-spinner diameter="20"></mat-spinner>
+    } @else {
+      Confirm Sale
+    }
+  </button>
+</mat-dialog-actions>

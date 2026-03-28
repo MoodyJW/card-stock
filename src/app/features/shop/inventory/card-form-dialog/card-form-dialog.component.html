@@ -66,28 +66,17 @@
     <section class="form-section">
       <h3 class="section-title">Condition & Grading</h3>
 
-      <div class="form-row">
-        <mat-form-field appearance="outline">
-          <mat-label>Condition</mat-label>
-          <mat-select formControlName="condition">
-            @for (c of conditions; track c.value) {
-              <mat-option [value]="c.value">{{ c.label }}</mat-option>
-            }
-          </mat-select>
-          @if (form.controls.condition.hasError('required')) {
-            <mat-error>Condition is required</mat-error>
+      <mat-form-field appearance="outline">
+        <mat-label>Condition</mat-label>
+        <mat-select formControlName="condition">
+          @for (c of conditions; track c.value) {
+            <mat-option [value]="c.value">{{ c.label }}</mat-option>
           }
-        </mat-form-field>
-
-        <mat-form-field appearance="outline">
-          <mat-label>Status</mat-label>
-          <mat-select formControlName="status">
-            @for (s of statuses; track s.value) {
-              <mat-option [value]="s.value">{{ s.label }}</mat-option>
-            }
-          </mat-select>
-        </mat-form-field>
-      </div>
+        </mat-select>
+        @if (form.controls.condition.hasError('required')) {
+          <mat-error>Condition is required</mat-error>
+        }
+      </mat-form-field>
 
       <div class="form-row">
         <mat-form-field appearance="outline">

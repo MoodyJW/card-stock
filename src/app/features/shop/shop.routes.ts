@@ -32,6 +32,12 @@ export default [
           import('./dashboard/dashboard.component').then(m => m.DashboardComponent),
       },
       {
+        path: 'inventory/:cardId',
+        loadComponent: () =>
+          import('./inventory/card-detail/card-detail.component').then(m => m.CardDetailComponent),
+        title: 'Card Details | CardStock',
+      },
+      {
         path: 'inventory',
         loadComponent: () =>
           import('./inventory/inventory-list/inventory-list.component').then(

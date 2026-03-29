@@ -306,6 +306,22 @@ export class InventoryService {
     return { error };
   }
 
+  async getCardById(id: string): Promise<{ data: InventoryItem | null; error: unknown }> {
+    const { data, error } = await this.supabase.client
+      .from('inventory')
+      .select('*')
+      .eq('id', id)
+      .is('deleted_at', null)
+      .single();
+
+    if (error) {
+      console.error('Failed to fetch card:', error);
+      return { data: null, error };
+    }
+
+    return { data: data as InventoryItem, error: null };
+  }
+
   setFilters(filters: InventoryFilters): void {
     this._filters.set(filters);
     this._page.set(0);

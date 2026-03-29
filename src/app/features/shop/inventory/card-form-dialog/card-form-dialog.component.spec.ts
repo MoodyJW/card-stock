@@ -7,6 +7,8 @@ import { CardFormDialogComponent, CardFormDialogData } from './card-form-dialog.
 import { InventoryService } from '../../../../core/services/inventory.service';
 import { NotificationService } from '../../../../core/services/notification.service';
 import { InventoryItem } from '../../../../core/models/inventory.model';
+import { ImageService } from '../../../../core/services/image.service';
+import { InventoryImage } from '../../../../core/models/image.model';
 
 const mockCard: InventoryItem = {
   id: '1',
@@ -37,6 +39,12 @@ function createComponent(dialogData: CardFormDialogData) {
   };
   const notifyMock = { error: vi.fn(), success: vi.fn(), info: vi.fn() };
   const dialogRefMock = { close: vi.fn() };
+  const imageServiceMock = {
+    getImages: vi.fn().mockResolvedValue([]),
+    uploadImage: vi.fn().mockResolvedValue({ id: 'img-1', storage_path: 'foo', is_primary: true }),
+    deleteImage: vi.fn().mockResolvedValue(true),
+    setAsPrimary: vi.fn().mockResolvedValue(true),
+  };
 
   TestBed.resetTestingModule();
   TestBed.configureTestingModule({
@@ -47,6 +55,7 @@ function createComponent(dialogData: CardFormDialogData) {
       { provide: MatDialogRef, useValue: dialogRefMock },
       { provide: InventoryService, useValue: inventoryServiceMock },
       { provide: NotificationService, useValue: notifyMock },
+      { provide: ImageService, useValue: imageServiceMock },
     ],
   });
 
@@ -59,6 +68,7 @@ function createComponent(dialogData: CardFormDialogData) {
     inventoryServiceMock,
     notifyMock,
     dialogRefMock,
+    imageServiceMock,
   };
 }
 
@@ -150,5 +160,86 @@ describe('CardFormDialogComponent', () => {
     expect(inventoryServiceMock.updateCard).toHaveBeenCalledWith(mockCard.id, expect.any(Object));
     expect(notifyMock.success).toHaveBeenCalledWith('Card updated successfully');
     expect(dialogRefMock.close).toHaveBeenCalled();
+  });
+
+  describe('Image Operations', () => {
+    it('should initialize with empty image slots in add mode', () => {
+      const { component } = createComponent({ mode: 'add' });
+      expect(component.newFrontImage()).toBeNull();
+      expect(component.newBackImage()).toBeNull();
+      expect(component.existingImages().length).toBe(0);
+    });
+
+    it('should sequentially append newly attached images locally on submit', async () => {
+      const { component, inventoryServiceMock, imageServiceMock, notifyMock, dialogRefMock } =
+        createComponent({ mode: 'add' });
+      component.form.controls.card_name.setValue('Venusaur');
+
+      const frontFile = new File([''], 'front.webp', { type: 'image/webp' });
+      const backFile = new File([''], 'back.webp', { type: 'image/webp' });
+
+      component.onAddFrontImage(frontFile);
+      component.onAddBackImage(backFile);
+
+      await component.onSubmit();
+
+      expect(inventoryServiceMock.addCard).toHaveBeenCalled();
+      expect(imageServiceMock.uploadImage).toHaveBeenCalledWith('1', frontFile, true);
+      expect(imageServiceMock.uploadImage).toHaveBeenCalledWith('1', backFile, false);
+      expect(notifyMock.success).toHaveBeenCalledWith('Card added successfully');
+      expect(dialogRefMock.close).toHaveBeenCalled();
+    });
+
+    it('should correctly capture image omission errors indicating partial creation', async () => {
+      const { component, inventoryServiceMock, imageServiceMock, notifyMock, dialogRefMock } =
+        createComponent({ mode: 'add' });
+      component.form.controls.card_name.setValue('BadCard');
+      const frontFile = new File([''], 'front.webp', { type: 'image/webp' });
+      component.onAddFrontImage(frontFile);
+
+      // Force failure
+      imageServiceMock.uploadImage.mockResolvedValueOnce(null);
+
+      await component.onSubmit();
+
+      expect(inventoryServiceMock.addCard).toHaveBeenCalled();
+      expect(imageServiceMock.uploadImage).toHaveBeenCalledWith('1', frontFile, true);
+      expect(notifyMock.info).toHaveBeenCalledWith(
+        'Card created but some images failed to upload. You can add them later.',
+      );
+      expect(dialogRefMock.close).toHaveBeenCalled();
+    });
+
+    it('should pre-fetch mapped remote images sequentially on edit mode load', async () => {
+      const { fixture, imageServiceMock } = createComponent({ mode: 'edit', card: mockCard });
+      const serverImages = [{ id: 'img-100', storage_path: 'path/to.webp', is_primary: true }];
+      imageServiceMock.getImages.mockResolvedValueOnce(serverImages);
+
+      // Trigger ngOnInit equivalent
+      await fixture.whenStable();
+
+      expect(imageServiceMock.getImages).toHaveBeenCalledWith('1');
+    });
+
+    it('should trigger deletion modal when user issues a delete request in Edit mode', async () => {
+      const { component, imageServiceMock, notifyMock } = createComponent({
+        mode: 'edit',
+        card: mockCard,
+      });
+      // Stub window.confirm to bypass blocking natively
+      const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
+
+      const dummyImage = {
+        id: 'img-100',
+        storage_path: 'foo',
+        is_primary: true,
+      } as unknown as InventoryImage;
+      await component.onEditDeleteImage(dummyImage);
+
+      expect(confirmSpy).toHaveBeenCalled();
+      expect(imageServiceMock.deleteImage).toHaveBeenCalledWith(dummyImage);
+      expect(notifyMock.info).toHaveBeenCalledWith('Image removed');
+      confirmSpy.mockRestore();
+    });
   });
 });

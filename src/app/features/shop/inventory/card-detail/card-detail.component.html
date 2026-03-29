@@ -1,0 +1,164 @@
+@if (loading()) {
+  <div class="loading-container">
+    <mat-spinner></mat-spinner>
+  </div>
+} @else if (notFound()) {
+  <div class="not-found">
+    <mat-icon class="not-found-icon">search_off</mat-icon>
+    <h2>Card Not Found</h2>
+    <p>This card may have been deleted or does not exist.</p>
+    <button mat-flat-button (click)="goBack()">
+      <mat-icon>arrow_back</mat-icon>
+      Back to Inventory
+    </button>
+  </div>
+} @else if (card(); as card) {
+  <!-- Header -->
+  <header class="detail-header">
+    <button
+      mat-icon-button
+      (click)="goBack()"
+      matTooltip="Back to Inventory"
+      aria-label="Back to inventory"
+    >
+      <mat-icon>arrow_back</mat-icon>
+    </button>
+
+    <h1 class="detail-title">{{ card.card_name }}</h1>
+
+    <div class="header-actions">
+      <button mat-stroked-button (click)="openEdit()" aria-label="Edit card">
+        <mat-icon>edit</mat-icon>
+        Edit
+      </button>
+
+      @if (card.status === 'available') {
+        <button mat-stroked-button (click)="openSell()" aria-label="Mark as sold">
+          <mat-icon>sell</mat-icon>
+          Sell
+        </button>
+      }
+
+      <button mat-stroked-button color="warn" (click)="deleteCard()" aria-label="Delete card">
+        <mat-icon>delete</mat-icon>
+        Delete
+      </button>
+    </div>
+  </header>
+
+  <!-- Body -->
+  <div class="detail-body">
+    <!-- Image Placeholder (replaced in Ticket 3b) -->
+    <aside class="image-column">
+      <div class="image-placeholder">
+        <mat-icon>photo_library</mat-icon>
+        <span>Images coming in Ticket 3b</span>
+      </div>
+    </aside>
+
+    <!-- Card Info -->
+    <section class="info-column">
+      <dl class="detail-list">
+        <!-- Set & Number -->
+        <div class="detail-item">
+          <dt>Set</dt>
+          <dd>
+            @if (card.set_name) {
+              {{ card.set_name }}
+              @if (card.set_code) {
+                <span class="set-code">({{ card.set_code }})</span>
+              }
+            } @else {
+              <span class="empty-value">—</span>
+            }
+          </dd>
+        </div>
+
+        <div class="detail-item">
+          <dt>Card Number</dt>
+          <dd>{{ card.card_number || '—' }}</dd>
+        </div>
+
+        <div class="detail-item">
+          <dt>Rarity</dt>
+          <dd>{{ card.rarity || '—' }}</dd>
+        </div>
+
+        <div class="detail-item">
+          <dt>Language</dt>
+          <dd>{{ card.language }}</dd>
+        </div>
+
+        <div class="detail-item">
+          <dt>Foil</dt>
+          <dd>
+            @if (card.is_foil) {
+              <span class="foil-badge">
+                <mat-icon>auto_awesome</mat-icon>
+                Yes
+              </span>
+            } @else {
+              No
+            }
+          </dd>
+        </div>
+
+        <!-- Condition & Grade -->
+        <div class="detail-item">
+          <dt>Condition</dt>
+          <dd>
+            <span class="condition-badge" [attr.data-condition]="card.condition">
+              {{ card.condition | conditionLabel }}
+            </span>
+          </dd>
+        </div>
+
+        <div class="detail-item">
+          <dt>Grade</dt>
+          <dd>{{ formatGrade(card) }}</dd>
+        </div>
+
+        <!-- Pricing -->
+        <div class="detail-item">
+          <dt>Purchase Price</dt>
+          <dd>
+            {{
+              card.purchase_price !== null && card.purchase_price !== undefined
+                ? (card.purchase_price | currency)
+                : '—'
+            }}
+          </dd>
+        </div>
+
+        <div class="detail-item">
+          <dt>Selling Price</dt>
+          <dd>
+            {{
+              card.selling_price !== null && card.selling_price !== undefined
+                ? (card.selling_price | currency)
+                : '—'
+            }}
+          </dd>
+        </div>
+
+        <!-- Status -->
+        <div class="detail-item">
+          <dt>Status</dt>
+          <dd>
+            <span class="status-chip" [attr.data-status]="card.status">
+              {{ card.status | titlecase }}
+            </span>
+          </dd>
+        </div>
+
+        <!-- Notes -->
+        @if (card.notes) {
+          <div class="detail-item detail-item-full">
+            <dt>Notes</dt>
+            <dd class="notes-text">{{ card.notes }}</dd>
+          </div>
+        }
+      </dl>
+    </section>
+  </div>
+}

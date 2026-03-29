@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { signal } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 import { InventoryListComponent } from './inventory-list.component';
 import { InventoryService } from '../../../../core/services/inventory.service';
 import { InventoryItem } from '../../../../core/models/inventory.model';
@@ -67,7 +68,13 @@ describe('InventoryListComponent', () => {
 
     await TestBed.configureTestingModule({
       imports: [InventoryListComponent],
-      providers: [{ provide: InventoryService, useValue: inventoryServiceMock }],
+      providers: [
+        { provide: InventoryService, useValue: inventoryServiceMock },
+        {
+          provide: ActivatedRoute,
+          useValue: { parent: {} },
+        },
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(InventoryListComponent);

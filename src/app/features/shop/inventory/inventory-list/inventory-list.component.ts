@@ -1,4 +1,5 @@
 import { Component, computed, inject, signal } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
 import { CurrencyPipe, TitleCasePipe } from '@angular/common';
 import { MatTableModule } from '@angular/material/table';
 import { MatSortModule, Sort } from '@angular/material/sort';
@@ -63,6 +64,8 @@ export class InventoryListComponent {
   private readonly notify = inject(NotificationService);
   private readonly exportService = inject(ExportService);
   private readonly shopContext = inject(ShopContextService);
+  private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
 
   constructor() {
     this.inventoryService.getDistinctSetNames();
@@ -101,6 +104,10 @@ export class InventoryListComponent {
   ];
 
   readonly pageSizeOptions = [10, 25, 50, 100];
+
+  navigateToCard(item: InventoryItem): void {
+    this.router.navigate(['inventory', item.id], { relativeTo: this.route.parent });
+  }
 
   onSortChange(sort: Sort): void {
     if (sort.direction) {

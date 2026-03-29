@@ -11,6 +11,7 @@ import { MatCardModule } from '@angular/material/card';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatMenuModule } from '@angular/material/menu';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { BreakpointObserver } from '@angular/cdk/layout';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { MatDialog } from '@angular/material/dialog';
@@ -18,6 +19,8 @@ import { InventoryService } from '../../../../core/services/inventory.service';
 import { NotificationService } from '../../../../core/services/notification.service';
 import { InventoryFilters, InventoryItem } from '../../../../core/models/inventory.model';
 import { ConditionLabelPipe } from '../../../../shared/pipes/condition-label.pipe';
+import { ExportService } from '../../../../core/services/export.service';
+import { ShopContextService } from '../../../../core/services/shop-context.service';
 import { FilterBarComponent } from '../filter-bar/filter-bar.component';
 import {
   CardFormDialogComponent,
@@ -45,6 +48,7 @@ import {
     MatProgressBarModule,
     MatTooltipModule,
     MatMenuModule,
+    MatProgressSpinnerModule,
     ConditionLabelPipe,
     FilterBarComponent,
     InventoryGridComponent,
@@ -57,6 +61,8 @@ export class InventoryListComponent {
   private readonly breakpointObserver = inject(BreakpointObserver);
   private readonly dialog = inject(MatDialog);
   private readonly notify = inject(NotificationService);
+  private readonly exportService = inject(ExportService);
+  private readonly shopContext = inject(ShopContextService);
 
   constructor() {
     this.inventoryService.getDistinctSetNames();
@@ -74,6 +80,8 @@ export class InventoryListComponent {
   readonly isMobile = toSignal(this.breakpointObserver.observe('(max-width: 767px)'), {
     initialValue: { matches: false, breakpoints: {} },
   });
+
+  readonly isExporting = signal(false);
 
   readonly userDisplayMode = signal<'table' | 'grid'>('table');
   readonly displayMode = computed(() =>
@@ -108,6 +116,38 @@ export class InventoryListComponent {
 
   onFiltersChange(filters: InventoryFilters): void {
     this.inventoryService.setFilters(filters);
+  }
+
+  async exportData(format: 'csv' | 'excel'): Promise<void> {
+    this.isExporting.set(true);
+
+    try {
+      const { data, isCapped, error } = await this.inventoryService.fetchAllFiltered();
+
+      if (error) {
+        this.notify.error('Failed to prepare export data');
+        return;
+      }
+
+      if (isCapped) {
+        this.notify.error('Export capped at 10,000 items');
+      }
+
+      if (data.length === 0) {
+        this.notify.error('No items to export');
+        return;
+      }
+
+      const shopSlug = this.shopContext.currentShopSlug() || 'unknown-shop';
+
+      if (format === 'csv') {
+        await this.exportService.exportCsv(data, shopSlug);
+      } else {
+        await this.exportService.exportExcel(data, shopSlug);
+      }
+    } finally {
+      this.isExporting.set(false);
+    }
   }
 
   formatGrade(item: InventoryItem): string {

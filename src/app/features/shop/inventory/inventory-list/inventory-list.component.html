@@ -24,6 +24,24 @@
       }
 
       @if (!isMobile().matches) {
+        <button
+          mat-icon-button
+          [matMenuTriggerFor]="exportMenu"
+          [disabled]="totalCount() === 0 || isExporting()"
+          matTooltip="Export"
+        >
+          @if (isExporting()) {
+            <mat-spinner diameter="24"></mat-spinner>
+          } @else {
+            <mat-icon>download</mat-icon>
+          }
+        </button>
+
+        <mat-menu #exportMenu="matMenu">
+          <button mat-menu-item (click)="exportData('csv')">Export as CSV</button>
+          <button mat-menu-item (click)="exportData('excel')">Export as Excel</button>
+        </mat-menu>
+
         <button mat-flat-button color="primary" (click)="openAddDialog()">
           <mat-icon>add</mat-icon>
           Add Card

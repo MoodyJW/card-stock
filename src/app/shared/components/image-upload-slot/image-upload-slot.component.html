@@ -1,0 +1,55 @@
+<div
+  role="button"
+  tabindex="0"
+  class="upload-slot-container"
+  [class.empty]="!displayUrl"
+  [class.has-content]="!!displayUrl"
+  (click)="!displayUrl && triggerFileInput()"
+  (keydown.enter)="!displayUrl && triggerFileInput()"
+>
+  @if (uploading) {
+    <div class="loading-overlay">
+      <mat-spinner diameter="32"></mat-spinner>
+    </div>
+  }
+
+  @if (!displayUrl) {
+    <div class="empty-state">
+      <mat-icon>add_a_photo</mat-icon>
+      <span class="slot-label">Add {{ label }}</span>
+    </div>
+  } @else {
+    <img [src]="displayUrl" [alt]="label" class="preview-image" />
+
+    <div class="slot-actions">
+      <button
+        mat-icon-button
+        class="primary-btn"
+        [class.is-primary]="isPrimary"
+        (click)="onPrimaryToggle($event)"
+        [matTooltip]="isPrimary ? 'Primary Image' : 'Set as Primary'"
+        aria-label="Toggle primary image"
+      >
+        <mat-icon>{{ isPrimary ? 'star' : 'star_border' }}</mat-icon>
+      </button>
+
+      <button
+        mat-icon-button
+        color="warn"
+        (click)="onDelete($event)"
+        matTooltip="Remove image"
+        aria-label="Remove image"
+      >
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+  }
+
+  <input
+    type="file"
+    #fileInput
+    accept="image/*"
+    capture="environment"
+    (change)="onFileSelected($event)"
+  />
+</div>

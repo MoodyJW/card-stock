@@ -2,6 +2,54 @@
 
 <mat-dialog-content>
   <form [formGroup]="form" id="card-form" (ngSubmit)="onSubmit()">
+    <!-- Section 0: Card Images -->
+    <section class="form-section image-section">
+      <h3 class="section-title">Images</h3>
+
+      <div class="image-slots-row">
+        @if (data.mode === 'add') {
+          <app-image-upload-slot
+            class="dialog-slot"
+            label="Front"
+            [isPrimary]="true"
+            [previewFile]="newFrontImage()"
+            (fileSelected)="onAddFrontImage($event)"
+            (deleteClicked)="onRemoveNewFrontImage()"
+          ></app-image-upload-slot>
+
+          <app-image-upload-slot
+            class="dialog-slot"
+            label="Back"
+            [isPrimary]="false"
+            [previewFile]="newBackImage()"
+            (fileSelected)="onAddBackImage($event)"
+            (deleteClicked)="onRemoveNewBackImage()"
+          ></app-image-upload-slot>
+        } @else {
+          <!-- Edit Mode: Map existing images -->
+          @for (img of existingImages(); track img.id) {
+            <app-image-upload-slot
+              class="dialog-slot"
+              [label]="img.is_primary ? 'Front' : 'Back'"
+              [isPrimary]="img.is_primary"
+              [image]="img"
+              (deleteClicked)="onEditDeleteImage(img)"
+              (primaryClicked)="onEditSetPrimary(img)"
+            ></app-image-upload-slot>
+          }
+          <!-- Render remainder up to 2 slots -->
+          @for (empty of [].constructor(2 - existingImages().length); track $index) {
+            <app-image-upload-slot
+              class="dialog-slot"
+              label="Image"
+              [uploading]="uploadingImages()"
+              (fileSelected)="onEditAddImage($event)"
+            ></app-image-upload-slot>
+          }
+        }
+      </div>
+    </section>
+
     <!-- Section 1: Card Identity -->
     <section class="form-section">
       <h3 class="section-title">Card Identity</h3>
@@ -162,8 +210,13 @@
 </mat-dialog-content>
 
 <mat-dialog-actions align="end">
-  <button mat-button mat-dialog-close [disabled]="loading()">Cancel</button>
-  <button mat-flat-button type="submit" form="card-form" [disabled]="loading() || form.invalid">
+  <button mat-button mat-dialog-close [disabled]="loading() || uploadingImages()">Cancel</button>
+  <button
+    mat-flat-button
+    type="submit"
+    form="card-form"
+    [disabled]="loading() || uploadingImages() || form.invalid"
+  >
     @if (loading()) {
       <mat-spinner diameter="20"></mat-spinner>
     } @else {

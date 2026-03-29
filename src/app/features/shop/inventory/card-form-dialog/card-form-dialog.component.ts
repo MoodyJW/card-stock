@@ -20,6 +20,9 @@ import {
   GradingCompany,
   InventoryItem,
 } from '../../../../core/models/inventory.model';
+import { InventoryImage } from '../../../../core/models/image.model';
+import { ImageService } from '../../../../core/services/image.service';
+import { ImageUploadSlotComponent } from '../../../../shared/components/image-upload-slot/image-upload-slot.component';
 
 export interface CardFormDialogData {
   mode: 'add' | 'edit';
@@ -40,6 +43,7 @@ export interface CardFormDialogData {
     MatButtonModule,
     MatIconModule,
     MatProgressSpinnerModule,
+    ImageUploadSlotComponent,
   ],
   templateUrl: './card-form-dialog.component.html',
   styleUrl: './card-form-dialog.component.scss',
@@ -50,8 +54,17 @@ export class CardFormDialogComponent {
   private readonly fb = inject(FormBuilder);
   private readonly inventoryService = inject(InventoryService);
   private readonly notify = inject(NotificationService);
+  private readonly imageService = inject(ImageService);
 
   readonly loading = signal(false);
+  readonly uploadingImages = signal(false);
+
+  // Add Mode Signals
+  readonly newFrontImage = signal<File | null>(null);
+  readonly newBackImage = signal<File | null>(null);
+
+  // Edit Mode Signals
+  readonly existingImages = signal<InventoryImage[]>([]);
 
   readonly form = this.fb.nonNullable.group({
     card_name: ['', [Validators.required]],
@@ -135,6 +148,70 @@ export class CardFormDialogComponent {
       if (card.grading_company && card.grade != null) {
         this.form.controls.grade.setValue(card.grade);
       }
+      this.loadExistingImages(card.id);
+    }
+  }
+
+  private async loadExistingImages(inventoryId: string): Promise<void> {
+    const images = await this.imageService.getImages(inventoryId);
+    this.existingImages.set(images);
+  }
+
+  // File Handlers for Add Mode
+  onAddFrontImage(file: File): void {
+    this.newFrontImage.set(file);
+  }
+
+  onAddBackImage(file: File): void {
+    this.newBackImage.set(file);
+  }
+
+  onRemoveNewFrontImage(): void {
+    this.newFrontImage.set(null);
+  }
+
+  onRemoveNewBackImage(): void {
+    this.newBackImage.set(null);
+  }
+
+  // Handlers for Edit Mode
+  async onEditAddImage(file: File): Promise<void> {
+    const cardId = this.data.card?.id;
+    if (!cardId) return;
+
+    this.uploadingImages.set(true);
+    // Determine if this should be the primary image (true if no images exist yet)
+    const isPrimary = this.existingImages().length === 0;
+
+    const image = await this.imageService.uploadImage(cardId, file, isPrimary);
+    if (image) {
+      this.existingImages.update(imgs => [...imgs, image]);
+      this.notify.success('Image uploaded');
+    }
+    this.uploadingImages.set(false);
+  }
+
+  async onEditDeleteImage(image: InventoryImage): Promise<void> {
+    if (!confirm('Are you sure you want to delete this image?')) return;
+
+    this.uploadingImages.set(true);
+    const success = await this.imageService.deleteImage(image);
+    if (success) {
+      this.existingImages.update(imgs => imgs.filter(i => i.id !== image.id));
+      this.notify.info('Image removed');
+    }
+    this.uploadingImages.set(false);
+  }
+
+  async onEditSetPrimary(image: InventoryImage): Promise<void> {
+    const cardId = this.data.card?.id;
+    if (!cardId || image.is_primary) return;
+
+    const success = await this.imageService.setAsPrimary(image.id, cardId);
+    if (success) {
+      // Re-fetch or manually update local state
+      this.existingImages.update(imgs => imgs.map(i => ({ ...i, is_primary: i.id === image.id })));
+      this.notify.success('Primary image updated');
     }
   }
 
@@ -161,7 +238,7 @@ export class CardFormDialogComponent {
 
     if (this.data.mode === 'add') {
       const { data, error } = await this.inventoryService.addCard(cleaned);
-      if (error) {
+      if (error || !data) {
         this.notify.error(
           typeof error === 'object' && error !== null && 'message' in error
             ? (error as { message: string }).message
@@ -170,12 +247,16 @@ export class CardFormDialogComponent {
         this.loading.set(false);
         return;
       }
+
+      // Upload images unconditionally without tracking blocking UI
+      await this.uploadNewImages(data.id);
+
       this.notify.success('Card added successfully');
       this.dialogRef.close(data);
     } else {
       const cardId = this.data.card!.id;
       const { data, error } = await this.inventoryService.updateCard(cardId, cleaned);
-      if (error) {
+      if (error || !data) {
         this.notify.error(
           typeof error === 'object' && error !== null && 'message' in error
             ? (error as { message: string }).message
@@ -186,6 +267,25 @@ export class CardFormDialogComponent {
       }
       this.notify.success('Card updated successfully');
       this.dialogRef.close(data);
+    }
+  }
+
+  private async uploadNewImages(cardId: string): Promise<void> {
+    let errCount = 0;
+
+    if (this.newFrontImage()) {
+      const res = await this.imageService.uploadImage(cardId, this.newFrontImage()!, true);
+      if (!res) errCount++;
+    }
+    if (this.newBackImage()) {
+      // Set to true if front wasn't uploaded
+      const isPrimary = !this.newFrontImage();
+      const res = await this.imageService.uploadImage(cardId, this.newBackImage()!, isPrimary);
+      if (!res) errCount++;
+    }
+
+    if (errCount > 0) {
+      this.notify.info('Card created but some images failed to upload. You can add them later.');
     }
   }
 

@@ -110,7 +110,7 @@ export class InventoryService {
     if (filters.condition) query = query.eq('condition', filters.condition);
     if (filters.set_name) query = query.eq('set_name', filters.set_name);
     if (filters.search) {
-      const escaped = filters.search.replace(/[%_]/g, '\\$&');
+      const escaped = filters.search.replace(/\\/g, '\\\\').replace(/[%_]/g, '\\$&');
       query = query.ilike('card_name', `%${escaped}%`);
     }
 

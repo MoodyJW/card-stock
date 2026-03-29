@@ -1,0 +1,197 @@
+@if (importState() === 'idle' || importState() === 'error') {
+  <!-- Summary bar -->
+  <div class="summary-bar">
+    <div class="summary-stat ready">
+      <mat-icon>check_circle</mat-icon>
+      <span>Ready: {{ validCount() }}</span>
+    </div>
+    <div class="summary-stat errors">
+      <mat-icon>error</mat-icon>
+      <span>Errors: {{ errorCount() }}</span>
+    </div>
+    <div class="summary-stat skipped">
+      <mat-icon>block</mat-icon>
+      <span>Skipped: {{ skippedCount() }}</span>
+    </div>
+  </div>
+
+  @if (importError()) {
+    <div class="error-message">
+      <mat-icon>error_outline</mat-icon>
+      <span>{{ importError() }}</span>
+    </div>
+  }
+
+  <!-- Validation table -->
+  @if (validatedRows().length > 0) {
+    <div class="validation-table-wrapper">
+      <table mat-table [dataSource]="validatedRows()" class="validation-table">
+        <!-- Row Number -->
+        <ng-container matColumnDef="rowNumber">
+          <th mat-header-cell *matHeaderCellDef>Row</th>
+          <td mat-cell *matCellDef="let row">{{ row.rowNumber }}</td>
+        </ng-container>
+
+        <!-- Card Name -->
+        <ng-container matColumnDef="cardName">
+          <th mat-header-cell *matHeaderCellDef>Card Name</th>
+          <td mat-cell *matCellDef="let row">
+            {{ row.data.card_name || '—' }}
+          </td>
+        </ng-container>
+
+        <!-- Set Name -->
+        <ng-container matColumnDef="setName">
+          <th mat-header-cell *matHeaderCellDef>Set</th>
+          <td mat-cell *matCellDef="let row">
+            {{ row.data.set_name || '—' }}
+          </td>
+        </ng-container>
+
+        <!-- Condition -->
+        <ng-container matColumnDef="condition">
+          <th mat-header-cell *matHeaderCellDef>Condition</th>
+          <td mat-cell *matCellDef="let row">
+            {{ row.data.condition || '—' }}
+          </td>
+        </ng-container>
+
+        <!-- Status -->
+        <ng-container matColumnDef="status">
+          <th mat-header-cell *matHeaderCellDef>Status</th>
+          <td mat-cell *matCellDef="let row">
+            @if (row.skipped) {
+              <mat-icon class="status-icon status-skipped" matTooltip="Skipped"
+                >remove_circle</mat-icon
+              >
+            } @else if (row.valid) {
+              <mat-icon class="status-icon status-valid" matTooltip="Valid">check_circle</mat-icon>
+            } @else {
+              <mat-icon class="status-icon status-error" matTooltip="Has errors">cancel</mat-icon>
+            }
+          </td>
+        </ng-container>
+
+        <!-- Errors -->
+        <ng-container matColumnDef="errors">
+          <th mat-header-cell *matHeaderCellDef>Errors</th>
+          <td mat-cell *matCellDef="let row">
+            @if (row.errors.length > 0 && !row.skipped) {
+              <span class="error-text">
+                @for (err of row.errors; track err.field; let last = $last) {
+                  {{ err.message }}{{ last ? '' : '; ' }}
+                }
+              </span>
+            }
+          </td>
+        </ng-container>
+
+        <!-- Action -->
+        <ng-container matColumnDef="action">
+          <th mat-header-cell *matHeaderCellDef></th>
+          <td mat-cell *matCellDef="let row">
+            <button
+              mat-icon-button
+              (click)="toggleSkip.emit(row.rowNumber)"
+              [matTooltip]="row.skipped ? 'Include row' : 'Skip row'"
+            >
+              <mat-icon>{{ row.skipped ? 'undo' : 'block' }}</mat-icon>
+            </button>
+          </td>
+        </ng-container>
+
+        <tr
+          mat-header-row
+          *matHeaderRowDef="[
+            'rowNumber',
+            'cardName',
+            'setName',
+            'condition',
+            'status',
+            'errors',
+            'action',
+          ]"
+        ></tr>
+        <tr
+          mat-row
+          *matRowDef="
+            let row;
+            columns: ['rowNumber', 'cardName', 'setName', 'condition', 'status', 'errors', 'action']
+          "
+          [class.row-error]="!row.valid && !row.skipped"
+          [class.row-skipped]="row.skipped"
+        ></tr>
+      </table>
+    </div>
+  }
+
+  <!-- Step actions -->
+  <div class="step-actions">
+    <button mat-button (click)="back.emit()">Back</button>
+    <button mat-flat-button (click)="startImport.emit()" [disabled]="validCount() === 0">
+      <mat-icon>file_upload</mat-icon>
+      Import {{ validCount() }} Cards
+    </button>
+  </div>
+} @else if (importState() === 'importing') {
+  <!-- Progress UI -->
+  <div class="progress-section">
+    <mat-icon class="progress-icon">cloud_upload</mat-icon>
+    <h2>Importing cards...</h2>
+    <p class="progress-text">
+      Importing {{ importProgressInfo()?.current ?? 0 }} of
+      {{ importProgressInfo()?.total ?? 0 }} cards
+    </p>
+    <mat-progress-bar
+      mode="determinate"
+      [value]="importProgressPercent()"
+      class="import-progress-bar"
+    ></mat-progress-bar>
+    <p class="progress-hint">Please don't close this page.</p>
+  </div>
+} @else if (importState() === 'done' && importResult()) {
+  <!-- Result summary -->
+  <div class="result-section">
+    <mat-icon class="result-icon success">task_alt</mat-icon>
+    <h2>Import Complete</h2>
+    <div class="result-stats">
+      <div class="result-stat">
+        <span class="result-number success">{{ importResult()!.imported }}</span>
+        <span class="result-label">Imported</span>
+      </div>
+      <div class="result-stat">
+        <span class="result-number skipped">{{ importResult()!.skipped }}</span>
+        <span class="result-label">Skipped</span>
+      </div>
+      @if (importResult()!.failed > 0) {
+        <div class="result-stat">
+          <span class="result-number failed">{{ importResult()!.failed }}</span>
+          <span class="result-label">Failed</span>
+        </div>
+      }
+    </div>
+
+    @if (importResult()!.errors.length > 0) {
+      <div class="result-errors">
+        <h3>Failed Rows</h3>
+        @for (err of importResult()!.errors.slice(0, 10); track err.rowNumber) {
+          <div class="result-error-item">
+            <span class="error-row">Row {{ err.rowNumber }}:</span>
+            <span class="error-msg">{{ err.message }}</span>
+          </div>
+        }
+        @if (importResult()!.errors.length > 10) {
+          <p class="error-overflow">...and {{ importResult()!.errors.length - 10 }} more</p>
+        }
+      </div>
+    }
+
+    <div class="result-actions">
+      <button mat-button (click)="resetWizard.emit()">Import More</button>
+      <button mat-flat-button (click)="goToInventory.emit()">
+        <mat-icon>inventory_2</mat-icon>
+        Go to Inventory
+      </button>
+    </div>
+  </div>
+}

@@ -24,3 +24,7 @@ The card grid already shows a foil indicator, but the table view does not. Add a
 ## 3. Improve grid cards layout
 
 The grid cards are a bit cramped, might need to increase size or reorganize contents. Standardize size and content positioning for consistency between cards (currently buttons and content can be in different places)
+
+## 4. Improve mobile import wizard layout
+
+The import wizard is not mobile friendly. The stepper labels are not entirely visible on mobile. Perhaps use a vertical stepper instead of horizontal or something like that. Will require some investigation for solutions.

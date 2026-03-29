@@ -1,14 +1,28 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
+import { provideRouter } from '@angular/router';
+import { signal } from '@angular/core';
 import { ImportWizardComponent } from './import-wizard.component';
 import { ImportParserService } from '../../../../core/services/import-parser.service';
-import { ParsedSpreadsheet, ColumnMapping } from '../../../../core/models/import.model';
+import { ImportService } from '../../../../core/services/import.service';
+import { ShopContextService } from '../../../../core/services/shop-context.service';
+import { SupabaseService } from '../../../../core/services/supabase.service';
+import { InventoryService } from '../../../../core/services/inventory.service';
+import {
+  ParsedSpreadsheet,
+  ColumnMapping,
+  ValidatedRow,
+} from '../../../../core/models/import.model';
 
 describe('ImportWizardComponent', () => {
   let component: ImportWizardComponent;
   let fixture: ComponentFixture<ImportWizardComponent>;
-  let parserMock: Record<string, unknown>;
+  let parserMock: Record<string, ReturnType<typeof vi.fn>>;
+  let importServiceMock: Record<string, ReturnType<typeof vi.fn> | ReturnType<typeof signal>>;
+  let shopContextMock: Record<string, ReturnType<typeof signal>>;
+  let supabaseMock: Record<string, ReturnType<typeof signal>>;
+  let inventoryMock: Record<string, ReturnType<typeof vi.fn>>;
 
   const mockParsedData: ParsedSpreadsheet = {
     headers: ['Card Name', 'Set Name', 'Condition'],
@@ -25,16 +39,72 @@ describe('ImportWizardComponent', () => {
     { sourceIndex: 2, sourceHeader: 'Condition', targetField: 'condition', confidence: 'exact' },
   ];
 
+  const mockValidatedRows: ValidatedRow[] = [
+    {
+      rowNumber: 2,
+      data: { card_name: 'Charizard', set_name: 'Base Set', condition: 'near_mint' },
+      errors: [],
+      valid: true,
+      skipped: false,
+    },
+    {
+      rowNumber: 3,
+      data: { card_name: 'Pikachu', set_name: 'Jungle', condition: 'lightly_played' },
+      errors: [],
+      valid: true,
+      skipped: false,
+    },
+    {
+      rowNumber: 4,
+      data: {},
+      errors: [{ field: 'card_name', message: 'Card Name is required.' }],
+      valid: false,
+      skipped: false,
+    },
+  ];
+
   beforeEach(async () => {
     parserMock = {
       parseFile: vi.fn().mockResolvedValue(mockParsedData),
       autoMapColumns: vi.fn().mockReturnValue(mockMappings),
       extractSheetData: vi.fn().mockReturnValue(mockParsedData),
+      validateRows: vi.fn().mockReturnValue(mockValidatedRows),
+    };
+
+    importServiceMock = {
+      importProgress: signal(null),
+      importCards: vi.fn().mockResolvedValue({
+        totalRows: 3,
+        imported: 2,
+        skipped: 1,
+        failed: 0,
+        errors: [],
+      }),
+    };
+
+    shopContextMock = {
+      currentShopId: signal('org-1'),
+      currentShopSlug: signal('test-shop'),
+    };
+
+    supabaseMock = {
+      user: signal({ id: 'user-1' }),
+    };
+
+    inventoryMock = {
+      loadInventory: vi.fn(),
     };
 
     await TestBed.configureTestingModule({
       imports: [ImportWizardComponent, NoopAnimationsModule],
-      providers: [{ provide: ImportParserService, useValue: parserMock }],
+      providers: [
+        provideRouter([]),
+        { provide: ImportParserService, useValue: parserMock },
+        { provide: ImportService, useValue: importServiceMock },
+        { provide: ShopContextService, useValue: shopContextMock },
+        { provide: SupabaseService, useValue: supabaseMock },
+        { provide: InventoryService, useValue: inventoryMock },
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(ImportWizardComponent);
@@ -289,6 +359,98 @@ describe('ImportWizardComponent', () => {
 
     it('should not show sheet selector for single-sheet files', () => {
       expect(component.hasMultipleSheets()).toBe(false);
+    });
+  });
+
+  describe('Review & Import (Step 3)', () => {
+    beforeEach(async () => {
+      const file = new File(['data'], 'test.xlsx');
+      await component.handleFile(file);
+    });
+
+    it('should run validation and populate validatedRows', () => {
+      component.runValidation();
+
+      expect(parserMock['validateRows']).toHaveBeenCalledWith(mockParsedData.rows, mockMappings);
+      expect(component.validatedRows().length).toBe(3);
+    });
+
+    it('should compute correct valid/error/skipped counts', () => {
+      component.runValidation();
+
+      expect(component.validCount()).toBe(2);
+      expect(component.errorCount()).toBe(1);
+      expect(component.skippedCount()).toBe(0);
+    });
+
+    it('should toggle skip and update counts', () => {
+      component.runValidation();
+
+      component.toggleSkip(2); // skip Charizard
+
+      expect(component.validCount()).toBe(1);
+      expect(component.skippedCount()).toBe(1);
+
+      component.toggleSkip(2); // un-skip
+
+      expect(component.validCount()).toBe(2);
+      expect(component.skippedCount()).toBe(0);
+    });
+
+    it('should have import disabled when no valid rows', () => {
+      component.runValidation();
+
+      // Skip both valid rows
+      component.toggleSkip(2);
+      component.toggleSkip(3);
+
+      expect(component.validCount()).toBe(0);
+    });
+
+    it('should call importService.importCards on startImport', async () => {
+      component.runValidation();
+
+      await component.startImport();
+
+      expect(importServiceMock['importCards']).toHaveBeenCalledWith(
+        component.validatedRows(),
+        'org-1',
+        'user-1',
+      );
+      expect(component.importState()).toBe('done');
+      expect(component.importResult()).toBeTruthy();
+      expect(inventoryMock['loadInventory']).toHaveBeenCalled();
+    });
+
+    it('should set error state on import failure', async () => {
+      (importServiceMock['importCards'] as ReturnType<typeof vi.fn>).mockRejectedValueOnce(
+        new Error('Network error'),
+      );
+      component.runValidation();
+
+      await component.startImport();
+
+      expect(component.importState()).toBe('error');
+      expect(component.importError()).toBe('Network error');
+    });
+
+    it('should trigger validation on step change to index 2', () => {
+      component.onStepChange({ selectedIndex: 2 });
+
+      expect(parserMock['validateRows']).toHaveBeenCalled();
+      expect(component.validatedRows().length).toBe(3);
+    });
+
+    it('should reset wizard state on resetWizard', () => {
+      component.runValidation();
+
+      component.resetWizard();
+
+      expect(component.file()).toBeNull();
+      expect(component.parsedData()).toBeNull();
+      expect(component.validatedRows()).toEqual([]);
+      expect(component.importState()).toBe('idle');
+      expect(component.importResult()).toBeNull();
     });
   });
 });

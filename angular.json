@@ -40,7 +40,10 @@
               "includePaths": [
                 "src"
               ]
-            }
+            },
+            "allowedCommonJsDependencies": [
+              "exceljs"
+            ]
           },
           "configurations": {
             "production": {

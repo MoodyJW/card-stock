@@ -3,7 +3,7 @@
     <h1>Import Cards</h1>
   </header>
 
-  <mat-stepper #stepper linear class="import-stepper">
+  <mat-stepper #stepper linear class="import-stepper" (selectionChange)="onStepChange($event)">
     <!-- Step 1: Upload -->
     <mat-step [completed]="uploadComplete()" label="Upload File">
       <div class="step-content">
@@ -182,14 +182,25 @@
       </div>
     </mat-step>
 
-    <!-- Step 3: Review & Import (placeholder for Ticket 3) -->
+    <!-- Step 3: Review & Import -->
     <mat-step label="Review & Import">
       <div class="step-content">
-        <div class="placeholder-content">
-          <mat-icon class="placeholder-icon">rate_review</mat-icon>
-          <p>Review and import functionality coming in the next update.</p>
-          <button mat-button matStepperPrevious>Back</button>
-        </div>
+        <app-import-wizard-review
+          [validatedRows]="validatedRows()"
+          [importState]="importState()"
+          [importResult]="importResult()"
+          [importError]="importError()"
+          [validCount]="validCount()"
+          [errorCount]="errorCount()"
+          [skippedCount]="skippedCount()"
+          [importProgressPercent]="importProgressPercent()"
+          [importProgressInfo]="importProgressInfo()"
+          (toggleSkip)="toggleSkip($event)"
+          (startImport)="startImport()"
+          (resetWizard)="resetWizard()"
+          (goToInventory)="goToInventory()"
+          (back)="stepper.previous()"
+        ></app-import-wizard-review>
       </div>
     </mat-step>
   </mat-stepper>

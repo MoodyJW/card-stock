@@ -1,4 +1,5 @@
 import { Component, computed, inject, signal, ViewChild } from '@angular/core';
+import { Router } from '@angular/router';
 import { MatStepperModule, MatStepper } from '@angular/material/stepper';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -6,11 +7,22 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatTableModule } from '@angular/material/table';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatCardModule } from '@angular/material/card';
 import { ImportParserService } from '../../../../core/services/import-parser.service';
-import { ParsedSpreadsheet, ColumnMapping } from '../../../../core/models/import.model';
+import { ImportService } from '../../../../core/services/import.service';
+import { ShopContextService } from '../../../../core/services/shop-context.service';
+import { SupabaseService } from '../../../../core/services/supabase.service';
+import {
+  ParsedSpreadsheet,
+  ColumnMapping,
+  ValidatedRow,
+  ImportResult,
+} from '../../../../core/models/import.model';
 import { CreateInventoryItem } from '../../../../core/models/inventory.model';
+import { InventoryService } from '../../../../core/services/inventory.service';
+import { ImportWizardReviewComponent } from '../import-wizard-review/import-wizard-review.component';
 
 /** Human-readable labels for inventory target fields. */
 const FIELD_LABELS: Record<keyof CreateInventoryItem, string> = {
@@ -60,14 +72,21 @@ const ACCEPTED_EXTENSIONS = ['.xlsx', '.xls', '.csv'];
     MatFormFieldModule,
     MatTableModule,
     MatProgressSpinnerModule,
+    MatProgressBarModule,
     MatTooltipModule,
     MatCardModule,
+    ImportWizardReviewComponent,
   ],
   templateUrl: './import-wizard.component.html',
   styleUrl: './import-wizard.component.scss',
 })
 export class ImportWizardComponent {
   private readonly importParser = inject(ImportParserService);
+  private readonly importService = inject(ImportService);
+  private readonly shopContext = inject(ShopContextService);
+  private readonly supabaseService = inject(SupabaseService);
+  private readonly inventoryService = inject(InventoryService);
+  private readonly router = inject(Router);
 
   @ViewChild('stepper') stepper!: MatStepper;
 
@@ -79,6 +98,12 @@ export class ImportWizardComponent {
   readonly parseError = signal<string | null>(null);
   readonly isDragging = signal(false);
   readonly parsing = signal(false);
+
+  // Step 3 signals
+  readonly validatedRows = signal<ValidatedRow[]>([]);
+  readonly importState = signal<'idle' | 'importing' | 'done' | 'error'>('idle');
+  readonly importResult = signal<ImportResult | null>(null);
+  readonly importError = signal<string | null>(null);
 
   // Step completion signals
   readonly uploadComplete = computed(() => this.parsedData() !== null);
@@ -99,6 +124,21 @@ export class ImportWizardComponent {
     if (!data) return [];
     return data.rows.slice(0, 3);
   });
+
+  // Step 3 computed
+  readonly validCount = computed(
+    () => this.validatedRows().filter(r => r.valid && !r.skipped).length,
+  );
+  readonly errorCount = computed(
+    () => this.validatedRows().filter(r => !r.valid && !r.skipped).length,
+  );
+  readonly skippedCount = computed(() => this.validatedRows().filter(r => r.skipped).length);
+  readonly importProgressPercent = computed(() => {
+    const p = this.importService.importProgress();
+    if (!p || p.total === 0) return 0;
+    return Math.round((p.current / p.total) * 100);
+  });
+  readonly importProgressInfo = computed(() => this.importService.importProgress());
 
   readonly mappedFieldsSet = computed(() => {
     const mapped = new Set<keyof CreateInventoryItem>();
@@ -314,6 +354,81 @@ export class ImportWizardComponent {
     if (value == null) return '';
     const str = String(value);
     return str.length > 30 ? str.substring(0, 27) + '...' : str;
+  }
+
+  // ── Step 3: Review & Import ───────────────────────────────────
+
+  /** Called when stepper selection changes; triggers validation on entering step 3. */
+  onStepChange(event: { selectedIndex: number }): void {
+    if (event.selectedIndex === 2) {
+      this.runValidation();
+    }
+  }
+
+  /** Runs validation on all parsed rows with current column mappings. */
+  runValidation(): void {
+    const data = this.parsedData();
+    const mappings = this.columnMappings();
+    if (!data) return;
+
+    const validated = this.importParser.validateRows(data.rows, mappings);
+    this.validatedRows.set(validated);
+    this.importState.set('idle');
+    this.importResult.set(null);
+    this.importError.set(null);
+  }
+
+  /** Toggles the skipped state of a row by row number. */
+  toggleSkip(rowNumber: number): void {
+    this.validatedRows.update(rows =>
+      rows.map(r => (r.rowNumber === rowNumber ? { ...r, skipped: !r.skipped } : r)),
+    );
+  }
+
+  /** Starts the batch import process via ImportService. */
+  async startImport(): Promise<void> {
+    const orgId = this.shopContext.currentShopId();
+    const userId = this.supabaseService.user()?.id;
+    if (!orgId) {
+      this.importError.set('No shop selected. Please select a shop first.');
+      return;
+    }
+
+    this.importState.set('importing');
+    this.importError.set(null);
+
+    try {
+      const result = await this.importService.importCards(this.validatedRows(), orgId, userId);
+      this.importResult.set(result);
+      this.importState.set('done');
+      // Refresh inventory so the list is up-to-date when the user navigates back
+      this.inventoryService.loadInventory();
+    } catch (err) {
+      this.importError.set(err instanceof Error ? err.message : 'Import failed. Please try again.');
+      this.importState.set('error');
+    }
+  }
+
+  /** Resets the wizard to step 1 for a new import. */
+  resetWizard(): void {
+    this.file.set(null);
+    this.parsedData.set(null);
+    this.columnMappings.set([]);
+    this.parseError.set(null);
+    this.selectedSheet.set(0);
+    this.validatedRows.set([]);
+    this.importState.set('idle');
+    this.importResult.set(null);
+    this.importError.set(null);
+    this.stepper?.reset();
+  }
+
+  /** Navigates to the inventory list page. */
+  goToInventory(): void {
+    const slug = this.shopContext.currentShopSlug();
+    if (slug) {
+      this.router.navigate(['/shop', slug, 'inventory']);
+    }
   }
 
   // ── Helpers ───────────────────────────────────────────────────

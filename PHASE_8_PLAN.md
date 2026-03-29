@@ -13,8 +13,8 @@
 - **Camera support:** `accept="image/*" capture="environment"` on file input for mobile camera access
 - **UX:** Quick upload in the Add/Edit Card dialog (1–2 images) + full gallery on a card detail page for viewing/managing
 - **Storage path convention:** `{organization_id}/{inventory_id}/{uuid}.webp`
-- **Bucket:** `card-images` with RLS policies tied to organization membership
-- **Primary image:** First uploaded image is `is_primary = true`, shown as thumbnail in table/grid views
+- **Bucket:** `card-images` — `public: true` so images are served via public URL without auth tokens (simpler `<img>` tags). RLS still controls who can upload/delete. Since card images are not sensitive data, public read access is acceptable. The UUID-based path convention (`{org_id}/{inventory_id}/{uuid}.webp`) makes URLs effectively unguessable.
+- **Primary image:** First uploaded image is `is_primary = true`, shown as thumbnail in table/grid views. Enforced at the DB level via a partial unique index.
 - **Existing schema:** `inventory_images` table already exists from Phase 2 with `storage_path`, `is_primary`, `organization_id`, `inventory_id`, `created_by`
 
 ### Storage Budget (Supabase Free Tier: 1 GB)
@@ -35,7 +35,7 @@ With compression, you can store 2,500–5,000 images within the 1 GB free tier.
 **Branch:** `feat/phase-8.1-image-service`
 
 ### Summary
-Create the Supabase storage bucket with RLS policies, build the image compression utility, and create the `ImageService` for upload/delete/fetch operations.
+Create the Supabase storage bucket with RLS policies, build the image compression utility, and create the `ImageService` for upload/delete/fetch operations. Includes a `set_primary_image` RPC for atomic primary toggling and a `cleanup_orphaned_images` RPC for storage hygiene.
 
 ### Tasks
 
@@ -60,7 +60,7 @@ Create the Supabase storage bucket with RLS policies, build the image compressio
          AND (storage.foldername(name))[1]::uuid IN (SELECT get_user_org_ids())
        );
 
-     -- Members can view their org's images
+     -- Members can view their org's images (for listing operations; public URLs bypass this)
      CREATE POLICY "Members view" ON storage.objects FOR SELECT
        USING (
          bucket_id = 'card-images'
@@ -77,7 +77,72 @@ Create the Supabase storage bucket with RLS policies, build the image compressio
          )
        );
      ```
-   - Note: bucket is `public: true` so images can be displayed via public URL without auth tokens (simpler `<img>` tags). RLS still controls who can upload/delete.
+
+   - Partial unique index to enforce at most one primary image per card:
+     ```sql
+     CREATE UNIQUE INDEX idx_images_one_primary
+     ON inventory_images(inventory_id)
+     WHERE is_primary = true;
+     ```
+
+   - `set_primary_image` RPC for atomic primary toggling:
+     ```sql
+     CREATE OR REPLACE FUNCTION public.set_primary_image(
+       p_image_id UUID,
+       p_inventory_id UUID
+     ) RETURNS void
+     LANGUAGE plpgsql
+     SECURITY DEFINER
+     SET search_path = ''
+     AS $$
+     DECLARE
+       v_org_id UUID;
+     BEGIN
+       -- Verify the image belongs to this card and get the org_id
+       SELECT organization_id INTO v_org_id
+       FROM public.inventory_images
+       WHERE id = p_image_id AND inventory_id = p_inventory_id;
+
+       IF v_org_id IS NULL THEN
+         RAISE EXCEPTION 'Image not found for this card';
+       END IF;
+
+       -- Verify caller is a member of the org
+       IF v_org_id NOT IN (SELECT public.get_user_org_ids()) THEN
+         RAISE EXCEPTION 'Access denied';
+       END IF;
+
+       -- Atomically unset existing primary and set the new one
+       UPDATE public.inventory_images
+       SET is_primary = false
+       WHERE inventory_id = p_inventory_id AND is_primary = true;
+
+       UPDATE public.inventory_images
+       SET is_primary = true
+       WHERE id = p_image_id;
+     END;
+     $$;
+     ```
+
+   - `cleanup_orphaned_storage` RPC for removing storage files whose `inventory_images` rows were CASCADE-deleted (e.g., when an org is hard-deleted). This is called manually or via a scheduled job:
+     ```sql
+     -- Returns the storage paths that are orphaned (no matching inventory_images row).
+     -- The caller (admin/cron) deletes these from storage after reviewing.
+     CREATE OR REPLACE FUNCTION public.cleanup_orphaned_storage()
+     RETURNS TABLE(storage_path TEXT)
+     LANGUAGE sql
+     SECURITY DEFINER
+     SET search_path = ''
+     AS $$
+       SELECT o.name AS storage_path
+       FROM storage.objects o
+       WHERE o.bucket_id = 'card-images'
+         AND NOT EXISTS (
+           SELECT 1 FROM public.inventory_images i
+           WHERE i.storage_path = o.name
+         );
+     $$;
+     ```
 
 2. **Create `ImageCompressionService`** in `src/app/core/services/image-compression.service.ts`
    - Injectable, `providedIn: 'root'`
@@ -125,9 +190,7 @@ Create the Supabase storage bucket with RLS policies, build the image compressio
      - Returns `supabase.storage.from('card-images').getPublicUrl(storagePath).data.publicUrl`
 
    - `async setAsPrimary(imageId: string, inventoryId: string): Promise<void>`
-     - Unset all `is_primary` for this `inventory_id`
-     - Set `is_primary = true` for the target image
-     - Both in a single transaction-like sequence
+     - Calls `set_primary_image` RPC (atomic — unsets existing primary and sets new one in a single function)
 
    - `async getImageCount(inventoryId: string): Promise<number>`
      - Returns count of images for a card (used to enforce 2-image limit)
@@ -160,7 +223,7 @@ Create the Supabase storage bucket with RLS policies, build the image compressio
    - Test: `uploadImage` cleans up storage on DB insert failure
    - Test: `deleteImage` removes from both storage and DB
    - Test: `getPublicUrl` returns correct URL format
-   - Test: `setAsPrimary` unsets existing primary and sets new one
+   - Test: `setAsPrimary` calls `set_primary_image` RPC with correct params
    - Test: upload rejected if image count already at limit (2)
 
 ### Files Created
@@ -175,6 +238,9 @@ src/app/core/services/image.service.spec.ts
 
 ### Acceptance Criteria
 - Storage bucket created with correct RLS policies
+- Partial unique index enforces at most one primary image per card
+- `set_primary_image` RPC atomically toggles primary image
+- `cleanup_orphaned_storage` RPC identifies orphaned storage files
 - Images compressed to ~150–200 KB before upload
 - WebP format used (JPEG fallback)
 - Upload creates both storage object and DB record
@@ -217,15 +283,29 @@ Add image upload capability to the existing Add/Edit Card dialog (from Phase 6 T
    **Add mode:**
    ```typescript
    // 1. Create the card first
-   const card = await this.inventoryService.addCard(formData);
-   // 2. Upload images (if any selected)
+   const { data: card, error } = await this.inventoryService.addCard(formData);
+   if (error) { /* handle error, return */ }
+
+   // 2. Upload images (if any selected) — non-blocking for card creation
+   let imageErrors = 0;
    if (this.frontImage()) {
-     await this.imageService.uploadImage(card.id, this.frontImage()!, true);
+     const result = await this.imageService.uploadImage(card.id, this.frontImage()!, true);
+     if (!result) imageErrors++;
    }
    if (this.backImage()) {
-     await this.imageService.uploadImage(card.id, this.backImage()!, !this.frontImage());
+     const result = await this.imageService.uploadImage(card.id, this.backImage()!, !this.frontImage());
+     if (!result) imageErrors++;
    }
-   // 3. Close dialog
+
+   // 3. Show appropriate feedback
+   if (imageErrors > 0) {
+     this.notify.warn('Card created but some images failed to upload. You can add them later from the card detail page.');
+   } else {
+     this.notify.success('Card added successfully');
+   }
+
+   // 4. Close dialog — card was created regardless of image outcome
+   this.dialogRef.close(card);
    ```
 
    **Edit mode:**
@@ -259,6 +339,7 @@ Add image upload capability to the existing Add/Edit Card dialog (from Phase 6 T
    - Test: file selection shows preview
    - Test: removing a file clears the preview
    - Test: submit in add mode uploads images after card creation
+   - Test: partial image upload failure shows warning but still closes dialog with card
    - Test: 2-image limit enforced (third slot not shown)
 
 ### Files Created
@@ -281,6 +362,7 @@ src/app/features/shop/inventory/card-form-dialog/
 
 ### Acceptance Criteria
 - Add mode: select up to 2 images, uploaded after card creation
+- Add mode: if card creation succeeds but image upload fails, card is still created and user is warned with instructions to retry from detail page
 - Edit mode: view existing images, add new, delete existing
 - Camera opens on mobile with rear camera default
 - Gallery picker works on all platforms
@@ -293,12 +375,12 @@ src/app/features/shop/inventory/card-form-dialog/
 
 ---
 
-## Ticket 3: Card Detail Page with Image Gallery
+## Ticket 3a: Card Detail Page
 
-**Branch:** `feat/phase-8.3-card-detail`
+**Branch:** `feat/phase-8.3a-card-detail`
 
 ### Summary
-Create a card detail page that shows full card information and an image gallery. This gives users a dedicated space to view images at full size and manage them.
+Create a card detail page that shows full card information with action buttons. Update table/grid row interactions: clicking a row navigates to the detail page, and an explicit "Edit" button is added to the action menu for inline editing via dialog.
 
 ### Tasks
 
@@ -313,23 +395,21 @@ Create a card detail page that shows full card information and an image gallery.
 
 2. **Create `CardDetailComponent`** — `src/app/features/shop/inventory/card-detail/`
    - Route param: `cardId` from URL
-   - Fetches card data and images on init
+   - Fetches card data on init
    - Signals:
      - `card = signal<InventoryItem | null>(null)`
-     - `images = signal<InventoryImage[]>([])`
      - `loading = signal(true)`
-     - `selectedImage = signal<InventoryImage | null>(null)` (for lightbox)
 
 3. **Template layout:**
    ```
    ┌──────────────────────────────────────────┐
-   │ ← Back to Inventory         Edit | Sell  │  (header)
+   │ ← Back to Inventory    Edit | Sell | Del │  (header)
    ├────────────────────┬─────────────────────┤
    │                    │  Card Name           │
-   │   Image Gallery    │  Set · #025/198      │
-   │   [Front] [Back]   │  Condition: Near Mint│
-   │                    │  Grade: PSA 9.5      │
-   │   + Add Image      │  Purchase: $12.00    │
+   │  [Image placeholder│  Set · #025/198      │
+   │   — populated in   │  Condition: Near Mint│
+   │   Ticket 3b]       │  Grade: PSA 9.5      │
+   │                    │  Purchase: $12.00    │
    │                    │  Selling: $25.00     │
    │                    │  Status: Available   │
    │                    │  Foil: Yes           │
@@ -338,51 +418,36 @@ Create a card detail page that shows full card information and an image gallery.
    └────────────────────┴─────────────────────┘
    ```
 
-   **Mobile:** stacked layout — images on top, details below
+   **Mobile:** stacked layout — image placeholder on top, details below
 
-4. **Image gallery section**
-   - Show images as thumbnails (card-sized aspect ratio ~2.5:3.5)
-   - Click thumbnail → open lightbox overlay (full-size image)
-   - Primary image shown first, with a subtle star badge
-   - "Add Image" slot (if under 2 images) — same `ImageUploadSlotComponent` from Ticket 2
-   - Delete button on each image (with confirmation)
-   - Set as primary button
-
-5. **Lightbox overlay** — simple implementation
-   - Full-screen overlay with dark background
-   - Image centered, fit to viewport
-   - Close button (X) top-right
-   - Click outside image to close
-   - Keyboard: Escape to close, Left/Right arrows to navigate between images
-   - No external library — keep it lightweight
-
-6. **Card info section**
+4. **Card info section**
    - Display all inventory fields in a structured layout
    - Use `mat-list` or definition list (`<dl>`) for field/value pairs
    - Condition shown with `ConditionLabelPipe` from Phase 6
    - Status shown as colored chip
    - Grade shown as "PSA 9.5" format (if graded)
    - Prices formatted with currency pipe
+   - Left column reserved for image gallery (added in Ticket 3b), show a placeholder area for now
 
-7. **Action buttons in header**
+5. **Action buttons in header**
    - "Edit" → opens `CardFormDialogComponent` in edit mode
    - "Sell" → opens `MarkSoldDialogComponent` (only if status === 'available')
-   - "Delete" → soft delete with undo toast (from Phase 6 Ticket 7 pattern)
+   - "Delete" → soft delete with undo toast (from Phase 6 Ticket 7 pattern), navigates back to inventory on success
    - On edit/sell success: refresh card data
 
-8. **Navigation**
+6. **Navigation changes**
    - Back button → `router.navigate(['../'], { relativeTo: route })`
-   - Table/grid row click in inventory list → navigates to `/shop/:slug/inventory/:cardId`
+   - **Table row click** → navigates to `/shop/:slug/inventory/:cardId` (replaces current behavior of opening the edit dialog)
+   - **Grid card click** → navigates to `/shop/:slug/inventory/:cardId` (replaces current behavior of opening the edit dialog)
+   - **Edit button remains in the action menu** (both table and grid) — the `more_vert` menu already has an "Edit" menu item from Phase 6 that opens the `CardFormDialogComponent` in edit mode. This continues to work as before for quick edits without navigating away.
 
-9. **Unit tests** — `card-detail.component.spec.ts`
+7. **Unit tests** — `card-detail.component.spec.ts`
    - Test: fetches card data on init
    - Test: displays all card fields
-   - Test: renders image thumbnails
-   - Test: lightbox opens on thumbnail click
-   - Test: lightbox closes on Escape key
-   - Test: "Add Image" slot shown when under 2 images
    - Test: edit button opens dialog
    - Test: sell button hidden for non-available cards
+   - Test: delete navigates back to inventory
+   - Test: back button navigates to inventory list
 
 ### Files Created
 ```
@@ -397,21 +462,89 @@ src/app/features/shop/inventory/card-detail/
 ```
 src/app/features/shop/shop.routes.ts                                    (add card detail route)
 src/app/features/shop/inventory/inventory-list/inventory-list.component.ts   (row click → navigate)
-src/app/features/shop/inventory/inventory-list/inventory-list.component.html (row click handler)
+src/app/features/shop/inventory/inventory-list/inventory-list.component.html (row click → navigate)
 src/app/features/shop/inventory/inventory-grid/inventory-grid.component.ts   (card click → navigate)
+src/app/features/shop/inventory/inventory-grid/inventory-grid.component.html (card click → navigate)
 ```
 
 ### Acceptance Criteria
-- Card detail page loads with all card info and images
-- Image gallery shows front/back thumbnails
-- Lightbox opens on click with keyboard navigation
-- Add image works from detail page (if under limit)
-- Delete image works with confirmation
-- Primary image toggleable
+- Card detail page loads with all card info
 - Edit/Sell/Delete actions work from detail page
-- Row click in table/grid navigates to detail page
+- Table row click navigates to detail page (no longer opens edit dialog)
+- Grid card click navigates to detail page (no longer opens edit dialog)
+- Edit menu item in `more_vert` action menu still opens edit dialog (quick inline edit)
 - Back button returns to inventory list
 - Responsive: stacked layout on mobile
+- Left column has a placeholder area for images (populated in Ticket 3b)
+
+---
+
+## Ticket 3b: Image Gallery & Lightbox on Detail Page
+
+**Branch:** `feat/phase-8.3b-image-gallery`
+
+### Summary
+Add the image gallery and lightbox to the card detail page created in Ticket 3a. Users can view, add, delete, and manage images from this page.
+
+### Tasks
+
+1. **Add image signals to `CardDetailComponent`**
+   - `images = signal<InventoryImage[]>([])`
+   - Fetch images on init via `imageService.getImages(cardId)`
+   - Refresh images after upload/delete/primary-toggle
+
+2. **Image gallery section** (replaces the placeholder from Ticket 3a)
+   - Show images as thumbnails (card-sized aspect ratio ~2.5:3.5)
+   - Click thumbnail → open lightbox dialog (full-size image)
+   - Primary image shown first, with a subtle star badge
+   - "Add Image" slot (if under 2 images) — same `ImageUploadSlotComponent` from Ticket 2
+   - Delete button on each image (with confirmation)
+   - Set as primary button (calls `set_primary_image` RPC via `ImageService`)
+
+3. **Lightbox dialog** — `MatDialog`-based implementation
+   - Open a `MatDialog` with `maxWidth: '100vw'`, `width: '100vw'`, `height: '100vh'`, `panelClass: 'lightbox-dialog'`
+   - Dark background via dialog backdrop
+   - Image centered, `object-fit: contain` to fit viewport
+   - Close button (X) top-right
+   - Click backdrop to close (default `MatDialog` behavior)
+   - Keyboard: Escape to close (default `MatDialog` behavior)
+   - Left/Right arrow navigation between images (if 2 images exist)
+   - Simple standalone component: `ImageLightboxDialogComponent`
+
+4. **Unit tests** — update `card-detail.component.spec.ts`
+   - Test: renders image thumbnails
+   - Test: lightbox dialog opens on thumbnail click
+   - Test: "Add Image" slot shown when under 2 images
+   - Test: "Add Image" slot hidden when at 2-image limit
+   - Test: delete image refreshes the gallery
+   - Test: set as primary calls RPC
+
+### Files Created
+```
+src/app/features/shop/inventory/image-lightbox-dialog/
+  image-lightbox-dialog.component.ts
+  image-lightbox-dialog.component.html
+  image-lightbox-dialog.component.scss
+```
+
+### Files Modified
+```
+src/app/features/shop/inventory/card-detail/
+  card-detail.component.ts    (add image gallery logic)
+  card-detail.component.html  (add image gallery template)
+  card-detail.component.scss  (add image gallery styles)
+  card-detail.component.spec.ts (add image gallery tests)
+```
+
+### Acceptance Criteria
+- Image gallery shows front/back thumbnails
+- Lightbox opens via `MatDialog` on thumbnail click with keyboard close (Escape)
+- Arrow key navigation between images in lightbox
+- Add image works from detail page (if under limit)
+- Delete image works with confirmation
+- Primary image toggleable via `set_primary_image` RPC
+- Gallery refreshes after upload/delete/primary-toggle
+- Responsive: images stack on mobile
 
 ---
 
@@ -425,28 +558,16 @@ Show the primary image as a thumbnail in the inventory data table and card grid 
 ### Tasks
 
 1. **Update `InventoryService.loadInventory()`**
-   - Join `inventory_images` in the query to get the primary image for each card:
+   - Join `inventory_images` in the query to get images for each card using Supabase's relation query (LEFT JOIN — cards without images are still included):
      ```typescript
      .select(`
        *,
-       primary_image:inventory_images!inner (
-         id, storage_path
+       images:inventory_images (
+         id, storage_path, is_primary
        )
      `)
      ```
-   - Or: use a separate query to batch-fetch primary images for the current page's card IDs
-   - Simpler approach: add optional `primary_image_url` to the loaded items via a post-fetch enrichment step
-
-   **Recommended approach** — use Supabase's relation query:
-   ```typescript
-   .select(`
-     *,
-     images:inventory_images (
-       id, storage_path, is_primary
-     )
-   `)
-   ```
-   Then compute `primaryImageUrl` on the client side from the first `is_primary` image.
+   - Then compute `primaryImageUrl` on the client side from the first `is_primary` image.
 
 2. **Update `InventoryItem` model** — add optional `images` relation:
    ```typescript
@@ -471,7 +592,7 @@ Show the primary image as a thumbnail in the inventory data table and card grid 
 5. **Performance considerations**
    - Images are already small (~200 KB after compression) so no additional thumbnail generation needed
    - Use `loading="lazy"` native attribute
-   - For grid view: consider `content-visibility: auto` CSS for off-screen cards
+   - For grid view: use `content-visibility: auto` CSS for off-screen cards (supported in all modern browsers)
    - Public URLs from Supabase Storage are CDN-cached
 
 6. **Unit tests**
@@ -498,6 +619,7 @@ src/app/features/shop/inventory/inventory-grid/
 - Primary image shown as thumbnail in table (40×56px)
 - Primary image shown as hero in grid view
 - Placeholder icon when no image
+- Cards without images still display correctly (LEFT JOIN, not INNER JOIN)
 - Lazy loading for off-screen images
 - No performance regression on inventory list load
 - Images load from Supabase public URLs
@@ -514,10 +636,9 @@ End-to-end Playwright tests covering image upload, display, and management.
 ### Tasks
 
 1. **Create test fixture images**
-   - `e2e/fixtures/card-front.jpg` — small test image (~50 KB)
-   - `e2e/fixtures/card-back.jpg` — small test image (~50 KB)
-   - `e2e/fixtures/oversized.jpg` — >10 MB test image (for rejection testing)
-   - Can be generated programmatically or checked in as small static files
+   - `e2e/fixtures/card-front.jpg` — small test image (~50 KB), checked into repo as a static file
+   - `e2e/fixtures/card-back.jpg` — small test image (~50 KB), checked into repo as a static file
+   - **No oversized fixture committed** — the oversized image for rejection testing is generated programmatically in the test via a `Buffer.alloc()` written to a temp file (avoids bloating the repo with a 10 MB+ file)
 
 2. **`e2e/card-images.spec.ts`** — Upload flow
    - Log in, create shop, add a card (no images)
@@ -539,13 +660,13 @@ End-to-end Playwright tests covering image upload, display, and management.
 
 4. **`e2e/card-images-validation.spec.ts`** — Error cases
    - Attempt upload of non-image file → verify rejection
-   - Attempt upload of oversized file → verify error toast
+   - Attempt upload of programmatically-generated oversized file → verify error toast
    - Verify 2-image limit enforced in UI (slot hidden)
 
 5. **`e2e/card-detail.spec.ts`** — Card detail page
    - Navigate to card detail via table row click
    - Verify all card fields displayed
-   - Click image → verify lightbox opens
+   - Click image → verify lightbox dialog opens
    - Press Escape → verify lightbox closes
    - Click edit → verify dialog opens
    - Click back → verify returns to inventory list
@@ -566,7 +687,7 @@ e2e/fixtures/card-back.jpg
 - Image deletion tested
 - Primary image toggling tested
 - 2-image limit enforced
-- File validation (type + size) tested
+- File validation (type + size) tested — oversized file generated at runtime, not committed
 - Card detail page navigation and display tested
 - Lightbox open/close tested
 - All tests isolated (own shop/cards)
@@ -577,20 +698,24 @@ e2e/fixtures/card-back.jpg
 ## Dependency Graph & Suggested Merge Order
 
 ```
-Ticket 1: Storage Bucket + Image Service      (foundational — bucket, compression, service)
+Ticket 1: Storage Bucket + Image Service      (foundational — bucket, compression, service, RPCs)
     ↓
 Ticket 2: Upload in Card Dialog                (depends on 1 — upload from dialog)
     ↓
-Ticket 3: Card Detail Page + Gallery           (depends on 1, 2 — detail page, lightbox)
+Ticket 3a: Card Detail Page                    (depends on Phase 6 — detail page, navigation changes)
+    ↓
+Ticket 3b: Image Gallery + Lightbox            (depends on 1, 2, 3a — images on detail page)
     ↓
 Ticket 4: Thumbnails in List/Grid              (depends on 1 — query join, display)
     ↓
 Ticket 5: E2E Tests                            (depends on all above)
 ```
 
-**Recommended order:** 1 → 2 → 3 → 4 → 5
+**Recommended order:** 1 → 2 → 3a → 3b → 4 → 5
 
-Tickets 3 and 4 can be worked in parallel after Ticket 2 since they're independent (detail page vs list thumbnails).
+Notes:
+- Ticket 3a can be started in parallel with Tickets 1 and 2 since it doesn't depend on image functionality (it just creates the detail page with a placeholder for images).
+- Tickets 3b and 4 can be worked in parallel after their respective dependencies are met (3b needs 3a + image service; 4 only needs image service).
 
 ---
 
@@ -605,7 +730,8 @@ src/app/core/services/image-compression.service.spec.ts                (Ticket 1
 src/app/core/services/image.service.ts                                 (Ticket 1)
 src/app/core/services/image.service.spec.ts                            (Ticket 1)
 src/app/shared/components/image-upload-slot/                            (Ticket 2)
-src/app/features/shop/inventory/card-detail/                            (Ticket 3)
+src/app/features/shop/inventory/card-detail/                            (Ticket 3a)
+src/app/features/shop/inventory/image-lightbox-dialog/                  (Ticket 3b)
 e2e/card-images.spec.ts                                                 (Ticket 5)
 e2e/card-images-management.spec.ts                                      (Ticket 5)
 e2e/card-images-validation.spec.ts                                      (Ticket 5)
@@ -617,12 +743,13 @@ e2e/fixtures/card-back.jpg                                              (Ticket 
 ### Modified Files
 ```
 src/app/features/shop/inventory/card-form-dialog/                       (Ticket 2 — add image section)
-src/app/features/shop/shop.routes.ts                                    (Ticket 3 — add detail route)
-src/app/features/shop/inventory/inventory-list/                         (Ticket 3, 4 — row click, thumbnails)
-src/app/features/shop/inventory/inventory-grid/                         (Ticket 3, 4 — card click, thumbnails)
+src/app/features/shop/shop.routes.ts                                    (Ticket 3a — add detail route)
+src/app/features/shop/inventory/inventory-list/                         (Ticket 3a, 4 — row click → navigate, thumbnails)
+src/app/features/shop/inventory/inventory-grid/                         (Ticket 3a, 4 — card click → navigate, thumbnails)
+src/app/features/shop/inventory/card-detail/                            (Ticket 3b — add image gallery)
 src/app/core/services/inventory.service.ts                              (Ticket 4 — join images in query)
 src/app/core/models/inventory.model.ts                                  (Ticket 4 — add images relation)
 ```
 
-### New Migration Required
-One migration to create the Supabase storage bucket and its RLS policies. The `inventory_images` table already exists from Phase 2.
+### New Migration
+One migration to create the Supabase storage bucket, its RLS policies, the `idx_images_one_primary` partial unique index, and two RPCs (`set_primary_image`, `cleanup_orphaned_storage`). The `inventory_images` table already exists from Phase 2.

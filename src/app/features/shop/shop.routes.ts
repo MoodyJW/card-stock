@@ -39,6 +39,13 @@ export default [
           ),
       },
       {
+        path: 'import',
+        loadComponent: () =>
+          import('./import/import-wizard/import-wizard.component').then(
+            m => m.ImportWizardComponent,
+          ),
+      },
+      {
         path: 'team',
         loadComponent: () => import('./team/team.component').then(m => m.TeamComponent),
       },

@@ -1,0 +1,196 @@
+<div class="import-wizard-container">
+  <header class="page-header">
+    <h1>Import Cards</h1>
+  </header>
+
+  <mat-stepper #stepper linear class="import-stepper">
+    <!-- Step 1: Upload -->
+    <mat-step [completed]="uploadComplete()" label="Upload File">
+      <div class="step-content">
+        @if (!file()) {
+          <!-- Drop zone -->
+          <div
+            class="drop-zone"
+            [class.dragging]="isDragging()"
+            (dragover)="onDragOver($event)"
+            (dragleave)="onDragLeave($event)"
+            (drop)="onDrop($event)"
+          >
+            @if (parsing()) {
+              <mat-spinner diameter="48"></mat-spinner>
+              <p class="drop-text">Parsing file...</p>
+            } @else {
+              <mat-icon class="upload-icon">cloud_upload</mat-icon>
+              <p class="drop-text">Drag & drop your spreadsheet here</p>
+              <p class="drop-subtext">or</p>
+              <button mat-flat-button class="browse-btn" (click)="fileInput.click()">
+                <mat-icon>folder_open</mat-icon>
+                Browse Files
+              </button>
+              <p class="drop-hint">Accepted formats: .xlsx, .xls, .csv — Max 5 MB</p>
+            }
+            <input
+              #fileInput
+              type="file"
+              hidden
+              accept=".xlsx,.xls,.csv"
+              (change)="onFileSelected($event)"
+            />
+          </div>
+        } @else {
+          <!-- File selected -->
+          <mat-card class="file-info-card">
+            <mat-card-content>
+              <div class="file-info">
+                <mat-icon class="file-icon">description</mat-icon>
+                <div class="file-details">
+                  <span class="file-name">{{ fileInfo()?.name }}</span>
+                  <span class="file-size">{{ fileInfo()?.size }}</span>
+                </div>
+                <button mat-icon-button (click)="removeFile()" matTooltip="Remove file">
+                  <mat-icon>close</mat-icon>
+                </button>
+              </div>
+            </mat-card-content>
+          </mat-card>
+        }
+
+        @if (parseError()) {
+          <div class="error-message">
+            <mat-icon>error_outline</mat-icon>
+            <span>{{ parseError() }}</span>
+          </div>
+        }
+      </div>
+    </mat-step>
+
+    <!-- Step 2: Column Mapping -->
+    <mat-step [completed]="mappingComplete()" label="Map Columns">
+      <div class="step-content">
+        @if (parsedData()) {
+          <!-- Sheet selector -->
+          @if (hasMultipleSheets()) {
+            <mat-form-field class="sheet-selector" appearance="outline">
+              <mat-label>Select Sheet</mat-label>
+              <mat-select [value]="selectedSheet()" (selectionChange)="changeSheet($event.value)">
+                @for (name of parsedData()!.sheetNames; track name; let i = $index) {
+                  <mat-option [value]="i">{{ name }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+          }
+
+          @if (!cardNameMapped()) {
+            <div class="warning-message">
+              <mat-icon>warning</mat-icon>
+              <span>Card Name is required. Please map a column to Card Name.</span>
+            </div>
+          }
+
+          <!-- Mapping table -->
+          <div class="mapping-table-wrapper">
+            <table mat-table [dataSource]="columnMappings()" class="mapping-table">
+              <!-- Source Header -->
+              <ng-container matColumnDef="sourceHeader">
+                <th mat-header-cell *matHeaderCellDef>Spreadsheet Column</th>
+                <td mat-cell *matCellDef="let mapping">
+                  <span class="source-header">{{ mapping.sourceHeader }}</span>
+                </td>
+              </ng-container>
+
+              <!-- Target Field -->
+              <ng-container matColumnDef="targetField">
+                <th mat-header-cell *matHeaderCellDef>Maps To</th>
+                <td mat-cell *matCellDef="let mapping">
+                  <mat-form-field appearance="outline" class="mapping-select">
+                    <mat-select
+                      [value]="mapping.targetField"
+                      (selectionChange)="updateMapping(mapping.sourceIndex, $event.value)"
+                    >
+                      @for (option of getAvailableFields(mapping.sourceIndex); track option.value) {
+                        <mat-option [value]="option.value" [disabled]="option.disabled">
+                          {{ option.label }}
+                        </mat-option>
+                      }
+                    </mat-select>
+                  </mat-form-field>
+                </td>
+              </ng-container>
+
+              <!-- Confidence -->
+              <ng-container matColumnDef="confidence">
+                <th mat-header-cell *matHeaderCellDef>Match</th>
+                <td mat-cell *matCellDef="let mapping">
+                  <mat-icon
+                    class="confidence-icon"
+                    [class.exact]="mapping.confidence === 'exact'"
+                    [class.fuzzy]="mapping.confidence === 'fuzzy'"
+                    [class.unmapped]="mapping.confidence === 'unmapped'"
+                    [matTooltip]="getConfidenceTooltip(mapping.confidence)"
+                  >
+                    {{ getConfidenceIcon(mapping.confidence) }}
+                  </mat-icon>
+                </td>
+              </ng-container>
+
+              <tr
+                mat-header-row
+                *matHeaderRowDef="['sourceHeader', 'targetField', 'confidence']"
+              ></tr>
+              <tr
+                mat-row
+                *matRowDef="let row; columns: ['sourceHeader', 'targetField', 'confidence']"
+              ></tr>
+            </table>
+          </div>
+
+          <!-- Data preview -->
+          @if (previewRows().length > 0) {
+            <div class="preview-section">
+              <h3 class="preview-title">Data Preview (first {{ previewRows().length }} rows)</h3>
+              <div class="preview-table-wrapper">
+                <table class="preview-table">
+                  <thead>
+                    <tr>
+                      @for (mapping of columnMappings(); track mapping.sourceIndex) {
+                        <th>{{ mapping.sourceHeader }}</th>
+                      }
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (row of previewRows(); track $index; let rowIdx = $index) {
+                      <tr>
+                        @for (mapping of columnMappings(); track mapping.sourceIndex) {
+                          <td>{{ getCellPreview(rowIdx, mapping.sourceIndex) }}</td>
+                        }
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          }
+
+          <!-- Step actions -->
+          <div class="step-actions">
+            <button mat-button matStepperPrevious>Back</button>
+            <button mat-flat-button matStepperNext [disabled]="!cardNameMapped()">
+              Review & Import
+            </button>
+          </div>
+        }
+      </div>
+    </mat-step>
+
+    <!-- Step 3: Review & Import (placeholder for Ticket 3) -->
+    <mat-step label="Review & Import">
+      <div class="step-content">
+        <div class="placeholder-content">
+          <mat-icon class="placeholder-icon">rate_review</mat-icon>
+          <p>Review and import functionality coming in the next update.</p>
+          <button mat-button matStepperPrevious>Back</button>
+        </div>
+      </div>
+    </mat-step>
+  </mat-stepper>
+</div>

@@ -93,6 +93,47 @@ export class InventoryService {
     this._loading.set(false);
   }
 
+  async fetchAllFiltered(): Promise<{ data: InventoryItem[]; isCapped: boolean; error: unknown }> {
+    const orgId = this.shopContext.currentShopId();
+    if (!orgId) return { data: [], isCapped: false, error: 'No shop selected' };
+
+    const filters = this._filters();
+
+    let query = this.supabase.client
+      .from('inventory')
+      .select('*')
+      .eq('organization_id', orgId)
+      .is('deleted_at', null)
+      .order(this._sortColumn(), { ascending: this._sortDirection() === 'asc' });
+
+    if (filters.status) query = query.eq('status', filters.status);
+    if (filters.condition) query = query.eq('condition', filters.condition);
+    if (filters.set_name) query = query.eq('set_name', filters.set_name);
+    if (filters.search) {
+      const escaped = filters.search.replace(/[%_]/g, '\\$&');
+      query = query.ilike('card_name', `%${escaped}%`);
+    }
+
+    // Limit to 10k + 1 to detect if there's more
+    query = query.limit(10001);
+
+    const { data, error } = await query;
+
+    if (error) {
+      console.error('Failed to fetch filtered inventory:', error);
+      return { data: [], isCapped: false, error };
+    }
+
+    const items = (data as InventoryItem[]) ?? [];
+    const isCapped = items.length > 10000;
+
+    return {
+      data: isCapped ? items.slice(0, 10000) : items,
+      isCapped,
+      error: null,
+    };
+  }
+
   async addCard(
     card: CreateInventoryItem,
   ): Promise<{ data: InventoryItem | null; error: unknown }> {

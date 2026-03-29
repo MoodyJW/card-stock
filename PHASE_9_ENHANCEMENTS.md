@@ -28,3 +28,7 @@ The grid cards are a bit cramped, might need to increase size or reorganize cont
 ## 4. Improve mobile import wizard layout
 
 The import wizard is not mobile friendly. The stepper labels are not entirely visible on mobile. Perhaps use a vertical stepper instead of horizontal or something like that. Will require some investigation for solutions.
+
+## 5. Dashboard
+
+Improve dashboard, add features like recent activity, sales, inventory value, etc.

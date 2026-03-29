@@ -3,7 +3,7 @@
     <h1>Import Cards</h1>
   </header>
 
-  <mat-stepper #stepper linear class="import-stepper" (selectionChange)="onStepChange($event)">
+  <mat-stepper #stepper class="import-stepper" (selectionChange)="onStepChange($event)">
     <!-- Step 1: Upload -->
     <mat-step [completed]="uploadComplete()" label="Upload File">
       <div class="step-content">

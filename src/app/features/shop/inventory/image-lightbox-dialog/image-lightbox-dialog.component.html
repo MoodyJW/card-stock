@@ -1,0 +1,28 @@
+<div class="lightbox-container">
+  <!-- Close button -->
+  <button mat-icon-button class="close-btn" (click)="close()" aria-label="Close lightbox">
+    <mat-icon>close</mat-icon>
+  </button>
+
+  <!-- Image counter -->
+  @if (hasMultiple) {
+    <span class="image-counter">{{ imageCounter }}</span>
+  }
+
+  <!-- Previous arrow -->
+  @if (hasMultiple) {
+    <button mat-icon-button class="nav-btn nav-prev" (click)="prev()" aria-label="Previous image">
+      <mat-icon>chevron_left</mat-icon>
+    </button>
+  }
+
+  <!-- Main image -->
+  <img [src]="currentImage.url" alt="Card image" class="lightbox-image" />
+
+  <!-- Next arrow -->
+  @if (hasMultiple) {
+    <button mat-icon-button class="nav-btn nav-next" (click)="next()" aria-label="Next image">
+      <mat-icon>chevron_right</mat-icon>
+    </button>
+  }
+</div>

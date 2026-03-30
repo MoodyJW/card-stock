@@ -2,12 +2,14 @@ import { TestBed } from '@angular/core/testing';
 import { signal } from '@angular/core';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { provideRouter, ActivatedRoute } from '@angular/router';
+import { MatDialog } from '@angular/material/dialog';
 import { describe, it, expect, vi } from 'vitest';
 import { CardDetailComponent } from './card-detail.component';
 import { InventoryService } from '../../../../core/services/inventory.service';
 import { NotificationService } from '../../../../core/services/notification.service';
-import { InventoryItem } from '../../../../core/models/inventory.model';
 import { ImageService } from '../../../../core/services/image.service';
+import { InventoryItem } from '../../../../core/models/inventory.model';
+import { InventoryImage } from '../../../../core/models/image.model';
 
 const mockCard: InventoryItem = {
   id: 'card-1',
@@ -30,7 +32,30 @@ const mockCard: InventoryItem = {
   updated_at: '2026-01-01',
 };
 
-async function setup(cardId: string | null = 'card-1', cardData: InventoryItem | null = mockCard) {
+const mockImages: InventoryImage[] = [
+  {
+    id: 'img-1',
+    inventory_id: 'card-1',
+    organization_id: 'org-1',
+    storage_path: 'org-1/card-1/front.webp',
+    is_primary: true,
+    created_at: '2026-01-01',
+  },
+  {
+    id: 'img-2',
+    inventory_id: 'card-1',
+    organization_id: 'org-1',
+    storage_path: 'org-1/card-1/back.webp',
+    is_primary: false,
+    created_at: '2026-01-02',
+  },
+];
+
+async function setup(
+  cardId: string | null = 'card-1',
+  cardData: InventoryItem | null = mockCard,
+  imageData: InventoryImage[] = [],
+) {
   const inventoryServiceMock = {
     getCardById: vi
       .fn()
@@ -55,8 +80,17 @@ async function setup(cardId: string | null = 'card-1', cardData: InventoryItem |
   };
 
   const imageServiceMock = {
-    getImages: vi.fn().mockResolvedValue([]),
-    getPublicUrl: vi.fn().mockReturnValue(''),
+    getImages: vi.fn().mockResolvedValue(imageData),
+    getPublicUrl: vi.fn((path: string) => `https://cdn.test/${path}`),
+    uploadImage: vi.fn().mockResolvedValue({ id: 'img-new', storage_path: 'new.webp' }),
+    deleteImage: vi.fn().mockResolvedValue(true),
+    setAsPrimary: vi.fn().mockResolvedValue(true),
+  };
+
+  const dialogMock = {
+    open: vi.fn().mockReturnValue({
+      afterClosed: () => ({ subscribe: vi.fn() }),
+    }),
   };
 
   TestBed.resetTestingModule();
@@ -78,6 +112,7 @@ async function setup(cardId: string | null = 'card-1', cardData: InventoryItem |
       { provide: InventoryService, useValue: inventoryServiceMock },
       { provide: NotificationService, useValue: notifyMock },
       { provide: ImageService, useValue: imageServiceMock },
+      { provide: MatDialog, useValue: dialogMock },
     ],
   });
 
@@ -92,10 +127,14 @@ async function setup(cardId: string | null = 'card-1', cardData: InventoryItem |
     component: fixture.componentInstance,
     inventoryServiceMock,
     notifyMock,
+    imageServiceMock,
+    dialogMock,
   };
 }
 
 describe('CardDetailComponent', () => {
+  // --- Existing card detail tests ---
+
   it('should create', async () => {
     const { component } = await setup();
     expect(component).toBeTruthy();
@@ -159,8 +198,6 @@ describe('CardDetailComponent', () => {
 
   it('should call deleteCard and navigate back', async () => {
     const { component, inventoryServiceMock, notifyMock } = await setup();
-
-    // Spy on goBack to prevent actual navigation
     const goBackSpy = vi.spyOn(component, 'goBack').mockImplementation(() => undefined);
 
     await component.deleteCard();
@@ -168,5 +205,111 @@ describe('CardDetailComponent', () => {
     expect(inventoryServiceMock.softDeleteCard).toHaveBeenCalledWith('card-1');
     expect(goBackSpy).toHaveBeenCalled();
     expect(notifyMock.showWithAction).toHaveBeenCalledWith('Card deleted', 'Undo', 5000);
+  });
+
+  // --- Image gallery tests (Ticket 3b) ---
+
+  describe('Image Gallery', () => {
+    it('should render image thumbnails when images exist', async () => {
+      const { fixture } = await setup('card-1', mockCard, mockImages);
+      const thumbs = fixture.nativeElement.querySelectorAll('.gallery-thumb');
+      expect(thumbs.length).toBe(2);
+    });
+
+    it('should show primary badge on primary image', async () => {
+      const { fixture } = await setup('card-1', mockCard, mockImages);
+      const badges = fixture.nativeElement.querySelectorAll('.primary-badge');
+      expect(badges.length).toBe(1);
+    });
+
+    it('should show add-image slot when under 2 images', async () => {
+      const { fixture } = await setup('card-1', mockCard, [mockImages[0]]);
+      const addSlot = fixture.nativeElement.querySelector('app-image-upload-slot');
+      expect(addSlot).toBeTruthy();
+    });
+
+    it('should hide add-image slot when at 2-image limit', async () => {
+      const { fixture } = await setup('card-1', mockCard, mockImages);
+      const addSlot = fixture.nativeElement.querySelector('app-image-upload-slot');
+      expect(addSlot).toBeFalsy();
+    });
+
+    it('should show add-image slot when no images exist', async () => {
+      const { fixture } = await setup('card-1', mockCard, []);
+      const addSlot = fixture.nativeElement.querySelector('app-image-upload-slot');
+      expect(addSlot).toBeTruthy();
+      expect(fixture.nativeElement.textContent).toContain('No images yet');
+    });
+
+    it('should open lightbox dialog on thumbnail click', async () => {
+      const { component, dialogMock, imageServiceMock } = await setup(
+        'card-1',
+        mockCard,
+        mockImages,
+      );
+
+      component.openLightbox(0);
+
+      expect(dialogMock.open).toHaveBeenCalled();
+      const callArgs = dialogMock.open.mock.calls[0];
+      expect(callArgs[1].panelClass).toBe('lightbox-dialog');
+      expect(callArgs[1].data.images.length).toBe(2);
+      expect(callArgs[1].data.startIndex).toBe(0);
+      expect(imageServiceMock.getPublicUrl).toHaveBeenCalled();
+    });
+
+    it('should call deleteImage and refresh gallery', async () => {
+      const { component, imageServiceMock, notifyMock } = await setup(
+        'card-1',
+        mockCard,
+        mockImages,
+      );
+      vi.spyOn(window, 'confirm').mockReturnValue(true);
+
+      await component.onGalleryDelete(mockImages[1]);
+
+      expect(imageServiceMock.deleteImage).toHaveBeenCalledWith(mockImages[1]);
+      expect(notifyMock.info).toHaveBeenCalledWith('Image removed');
+      // getImages called again after delete
+      const callCount = imageServiceMock.getImages.mock.calls.length;
+      expect(callCount).toBeGreaterThanOrEqual(2);
+
+      vi.restoreAllMocks();
+    });
+
+    it('should call setAsPrimary and refresh gallery', async () => {
+      const { component, imageServiceMock, notifyMock } = await setup(
+        'card-1',
+        mockCard,
+        mockImages,
+      );
+
+      await component.onGallerySetPrimary(mockImages[1]);
+
+      expect(imageServiceMock.setAsPrimary).toHaveBeenCalledWith('img-2', 'card-1');
+      expect(notifyMock.success).toHaveBeenCalledWith('Primary image updated');
+      const callCount = imageServiceMock.getImages.mock.calls.length;
+      expect(callCount).toBeGreaterThanOrEqual(2);
+    });
+
+    it('should upload image and refresh gallery', async () => {
+      const { component, imageServiceMock, notifyMock } = await setup('card-1', mockCard, []);
+
+      const file = new File([''], 'test.webp', { type: 'image/webp' });
+      await component.onGalleryUpload(file);
+
+      expect(imageServiceMock.uploadImage).toHaveBeenCalledWith('card-1', file, true);
+      expect(notifyMock.success).toHaveBeenCalledWith('Image uploaded');
+      const callCount = imageServiceMock.getImages.mock.calls.length;
+      expect(callCount).toBeGreaterThanOrEqual(2);
+    });
+
+    it('should not set primary on already-primary image', async () => {
+      const { component, imageServiceMock } = await setup('card-1', mockCard, mockImages);
+
+      await component.onGallerySetPrimary(mockImages[0]); // already primary
+
+      expect(imageServiceMock.setAsPrimary).not.toHaveBeenCalled();
+    });
   });
 });

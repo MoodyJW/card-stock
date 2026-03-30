@@ -48,12 +48,67 @@
 
   <!-- Body -->
   <div class="detail-body">
-    <!-- Image Placeholder (replaced in Ticket 3b) -->
+    <!-- Image Gallery -->
     <aside class="image-column">
-      <div class="image-placeholder">
-        <mat-icon>photo_library</mat-icon>
-        <span>Images coming in Ticket 3b</span>
+      <div class="image-gallery">
+        @for (image of images(); track image.id; let idx = $index) {
+          <div
+            class="gallery-thumb"
+            role="button"
+            tabindex="0"
+            (click)="openLightbox(idx)"
+            (keydown.enter)="openLightbox(idx)"
+          >
+            <img
+              [src]="getImageUrl(image)"
+              [alt]="card.card_name"
+              class="thumb-img"
+              loading="lazy"
+            />
+            @if (image.is_primary) {
+              <span class="primary-badge" matTooltip="Primary image">
+                <mat-icon>star</mat-icon>
+              </span>
+            }
+            <div class="thumb-actions">
+              @if (!image.is_primary) {
+                <button
+                  mat-icon-button
+                  class="thumb-action-btn"
+                  (click)="onGallerySetPrimary(image); $event.stopPropagation()"
+                  matTooltip="Set as primary"
+                  aria-label="Set as primary image"
+                >
+                  <mat-icon>star_border</mat-icon>
+                </button>
+              }
+              <button
+                mat-icon-button
+                class="thumb-action-btn delete-action"
+                (click)="onGalleryDelete(image); $event.stopPropagation()"
+                matTooltip="Remove image"
+                aria-label="Remove image"
+              >
+                <mat-icon>close</mat-icon>
+              </button>
+            </div>
+          </div>
+        }
+
+        <!-- Add Image slot (if under limit) -->
+        @if (images().length < MAX_IMAGES) {
+          <app-image-upload-slot
+            class="gallery-add-slot"
+            [label]="images().length === 0 ? 'Front' : 'Back'"
+            [uploading]="uploadingImage()"
+            (fileSelected)="onGalleryUpload($event)"
+          ></app-image-upload-slot>
+        }
       </div>
+
+      @if (images().length === 0 && !uploadingImage()) {
+        <p class="no-images-hint">No images yet. Add up to 2 images.</p>
+      }
     </aside>
 
     <!-- Card Info -->

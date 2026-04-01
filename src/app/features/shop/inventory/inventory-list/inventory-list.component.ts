@@ -18,7 +18,12 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { MatDialog } from '@angular/material/dialog';
 import { InventoryService } from '../../../../core/services/inventory.service';
 import { NotificationService } from '../../../../core/services/notification.service';
-import { InventoryFilters, InventoryItem } from '../../../../core/models/inventory.model';
+import { ImageService } from '../../../../core/services/image.service';
+import {
+  InventoryFilters,
+  InventoryItem,
+  InventoryItemWithImages,
+} from '../../../../core/models/inventory.model';
 import { ConditionLabelPipe } from '../../../../shared/pipes/condition-label.pipe';
 import { ExportService } from '../../../../core/services/export.service';
 import { ShopContextService } from '../../../../core/services/shop-context.service';
@@ -66,6 +71,7 @@ export class InventoryListComponent {
   private readonly shopContext = inject(ShopContextService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
+  private readonly imageService = inject(ImageService);
 
   constructor() {
     this.inventoryService.getDistinctSetNames();
@@ -92,6 +98,7 @@ export class InventoryListComponent {
   );
 
   readonly displayedColumns = [
+    'image',
     'card_name',
     'set_name',
     'card_number',
@@ -107,6 +114,16 @@ export class InventoryListComponent {
 
   navigateToCard(item: InventoryItem): void {
     this.router.navigate(['inventory', item.id], { relativeTo: this.route.parent });
+  }
+
+  getPrimaryImageUrl(item: InventoryItemWithImages): string | null {
+    const primary = item.images?.find(img => img.is_primary);
+    if (!primary) {
+      const first = item.images?.[0];
+      if (!first) return null;
+      return this.imageService.getPublicUrl(first.storage_path);
+    }
+    return this.imageService.getPublicUrl(primary.storage_path);
   }
 
   onSortChange(sort: Sort): void {
@@ -163,16 +180,24 @@ export class InventoryListComponent {
   }
 
   openAddDialog(): void {
-    this.dialog.open(CardFormDialogComponent, {
+    const dialogRef = this.dialog.open(CardFormDialogComponent, {
       data: { mode: 'add' } satisfies CardFormDialogData,
       ...this.dialogConfig,
+    });
+
+    dialogRef.afterClosed().subscribe(() => {
+      this.inventoryService.loadInventory();
     });
   }
 
   openEditDialog(item: InventoryItem): void {
-    this.dialog.open(CardFormDialogComponent, {
+    const dialogRef = this.dialog.open(CardFormDialogComponent, {
       data: { mode: 'edit', card: item } satisfies CardFormDialogData,
       ...this.dialogConfig,
+    });
+
+    dialogRef.afterClosed().subscribe(() => {
+      this.inventoryService.loadInventory();
     });
   }
 

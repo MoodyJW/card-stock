@@ -26,25 +26,45 @@
             (deleteClicked)="onRemoveNewBackImage()"
           ></app-image-upload-slot>
         } @else {
-          <!-- Edit Mode: Map existing images -->
-          @for (img of existingImages(); track img.id) {
+          <!-- Edit Mode: Map existing active images -->
+          @for (img of activeImages(); track img.id) {
             <app-image-upload-slot
               class="dialog-slot"
-              [label]="img.is_primary ? 'Front' : 'Back'"
-              [isPrimary]="img.is_primary"
+              [label]="isPendingPrimary(img) ? 'Front' : 'Back'"
+              [isPrimary]="isPendingPrimary(img)"
               [image]="img"
               (deleteClicked)="onEditDeleteImage(img)"
               (primaryClicked)="onEditSetPrimary(img)"
             ></app-image-upload-slot>
           }
-          <!-- Render remainder up to 2 slots -->
-          @for (empty of [].constructor(2 - existingImages().length); track $index) {
-            <app-image-upload-slot
-              class="dialog-slot"
-              label="Image"
-              [uploading]="uploadingImages()"
-              (fileSelected)="onEditAddImage($event)"
-            ></app-image-upload-slot>
+          <!-- Render remainder empty slots up to 2 total -->
+          @if (activeImages().length < 2) {
+            @if (activeImages().length === 0) {
+              <app-image-upload-slot
+                class="dialog-slot"
+                label="Front"
+                [previewFile]="newFrontImage()"
+                (fileSelected)="onEditAddImage($event)"
+                (deleteClicked)="onRemoveNewFrontImage()"
+              ></app-image-upload-slot>
+
+              <app-image-upload-slot
+                class="dialog-slot"
+                label="Back"
+                [previewFile]="newBackImage()"
+                (fileSelected)="onEditAddImage($event)"
+                (deleteClicked)="onRemoveNewBackImage()"
+              ></app-image-upload-slot>
+            } @else {
+              <!-- 1 active image + 1 empty slot for the remaining -->
+              <app-image-upload-slot
+                class="dialog-slot"
+                label="Back"
+                [previewFile]="newFrontImage() || newBackImage()"
+                (fileSelected)="onEditAddImage($event)"
+                (deleteClicked)="newFrontImage() ? onRemoveNewFrontImage() : onRemoveNewBackImage()"
+              ></app-image-upload-slot>
+            }
           }
         }
       </div>
@@ -210,13 +230,8 @@
 </mat-dialog-content>
 
 <mat-dialog-actions align="end">
-  <button mat-button mat-dialog-close [disabled]="loading() || uploadingImages()">Cancel</button>
-  <button
-    mat-flat-button
-    type="submit"
-    form="card-form"
-    [disabled]="loading() || uploadingImages() || form.invalid"
-  >
+  <button mat-button mat-dialog-close [disabled]="loading()">Cancel</button>
+  <button mat-flat-button type="submit" form="card-form" [disabled]="loading() || form.invalid">
     @if (loading()) {
       <mat-spinner diameter="20"></mat-spinner>
     } @else {

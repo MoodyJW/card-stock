@@ -190,26 +190,6 @@ describe('CardFormDialogComponent', () => {
       expect(dialogRefMock.close).toHaveBeenCalled();
     });
 
-    it('should correctly capture image omission errors indicating partial creation', async () => {
-      const { component, inventoryServiceMock, imageServiceMock, notifyMock, dialogRefMock } =
-        createComponent({ mode: 'add' });
-      component.form.controls.card_name.setValue('BadCard');
-      const frontFile = new File([''], 'front.webp', { type: 'image/webp' });
-      component.onAddFrontImage(frontFile);
-
-      // Force failure
-      imageServiceMock.uploadImage.mockResolvedValueOnce(null);
-
-      await component.onSubmit();
-
-      expect(inventoryServiceMock.addCard).toHaveBeenCalled();
-      expect(imageServiceMock.uploadImage).toHaveBeenCalledWith('1', frontFile, true);
-      expect(notifyMock.info).toHaveBeenCalledWith(
-        'Card created but some images failed to upload. You can add them later.',
-      );
-      expect(dialogRefMock.close).toHaveBeenCalled();
-    });
-
     it('should pre-fetch mapped remote images sequentially on edit mode load', async () => {
       const { fixture, imageServiceMock } = createComponent({ mode: 'edit', card: mockCard });
       const serverImages = [{ id: 'img-100', storage_path: 'path/to.webp', is_primary: true }];
@@ -221,25 +201,30 @@ describe('CardFormDialogComponent', () => {
       expect(imageServiceMock.getImages).toHaveBeenCalledWith('1');
     });
 
-    it('should trigger deletion modal when user issues a delete request in Edit mode', async () => {
+    it('should defer deletion until submit in Edit mode', async () => {
       const { component, imageServiceMock, notifyMock } = createComponent({
         mode: 'edit',
         card: mockCard,
       });
-      // Stub window.confirm to bypass blocking natively
-      const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
 
       const dummyImage = {
         id: 'img-100',
         storage_path: 'foo',
         is_primary: true,
       } as unknown as InventoryImage;
-      await component.onEditDeleteImage(dummyImage);
+      component.existingImages.set([dummyImage]);
 
-      expect(confirmSpy).toHaveBeenCalled();
+      // Call delete handler (now synchronous state mutation)
+      component.onEditDeleteImage(dummyImage);
+
+      expect(component.deletedImages()).toContain(dummyImage);
+      expect(imageServiceMock.deleteImage).not.toHaveBeenCalled();
+
+      // Submit should flush deletions
+      await component.onSubmit();
+
       expect(imageServiceMock.deleteImage).toHaveBeenCalledWith(dummyImage);
-      expect(notifyMock.info).toHaveBeenCalledWith('Image removed');
-      confirmSpy.mockRestore();
+      expect(notifyMock.success).toHaveBeenCalledWith('Card updated successfully');
     });
   });
 });

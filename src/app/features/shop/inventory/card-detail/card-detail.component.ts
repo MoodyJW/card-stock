@@ -126,6 +126,7 @@ export class CardDetailComponent implements OnInit {
     if (result) {
       this.notify.success('Image uploaded');
       await this.loadImages(this.cardId);
+      this.inventoryService.loadInventory(); // Refresh list cache
     }
   }
 
@@ -137,6 +138,7 @@ export class CardDetailComponent implements OnInit {
     if (success) {
       this.notify.info('Image removed');
       await this.loadImages(this.cardId);
+      this.inventoryService.loadInventory(); // Refresh list cache
     }
   }
 
@@ -147,6 +149,7 @@ export class CardDetailComponent implements OnInit {
     if (success) {
       this.notify.success('Primary image updated');
       await this.loadImages(this.cardId);
+      this.inventoryService.loadInventory(); // Refresh list cache
     }
   }
 

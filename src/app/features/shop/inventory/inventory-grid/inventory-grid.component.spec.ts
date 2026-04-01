@@ -1,9 +1,10 @@
 import { TestBed } from '@angular/core/testing';
 import { describe, it, expect, vi } from 'vitest';
 import { InventoryGridComponent } from './inventory-grid.component';
-import { InventoryItem } from '../../../../core/models/inventory.model';
+import { InventoryItemWithImages } from '../../../../core/models/inventory.model';
+import { ImageService } from '../../../../core/services/image.service';
 
-const mockItems: InventoryItem[] = [
+const mockItems: InventoryItemWithImages[] = [
   {
     id: '1',
     organization_id: 'org-1',
@@ -20,6 +21,7 @@ const mockItems: InventoryItem[] = [
     status: 'available',
     created_at: '2026-01-01',
     updated_at: '2026-01-01',
+    images: [{ id: 'img-1', storage_path: 'org-1/1/front.webp', is_primary: true }],
   },
   {
     id: '2',
@@ -35,6 +37,7 @@ const mockItems: InventoryItem[] = [
     status: 'available',
     created_at: '2026-01-02',
     updated_at: '2026-01-02',
+    images: [],
   },
   {
     id: '3',
@@ -49,17 +52,22 @@ const mockItems: InventoryItem[] = [
   },
 ];
 
-function createComponent(items: InventoryItem[] = mockItems) {
+function createComponent(items: InventoryItemWithImages[] = mockItems) {
+  const imageServiceMock = {
+    getPublicUrl: vi.fn((path: string) => `https://cdn.test/${path}`),
+  };
+
   TestBed.resetTestingModule();
   TestBed.configureTestingModule({
     imports: [InventoryGridComponent],
+    providers: [{ provide: ImageService, useValue: imageServiceMock }],
   });
 
   const fixture = TestBed.createComponent(InventoryGridComponent);
   fixture.componentRef.setInput('items', items);
   fixture.detectChanges();
 
-  return { fixture, component: fixture.componentInstance };
+  return { fixture, component: fixture.componentInstance, imageServiceMock };
 }
 
 describe('InventoryGridComponent', () => {
@@ -164,5 +172,24 @@ describe('InventoryGridComponent', () => {
     deleteBtn.click();
 
     expect(spy).toHaveBeenCalledWith(mockItems[0]);
+  });
+
+  // --- Image thumbnail tests ---
+
+  it('should render hero image for cards with images', () => {
+    const { fixture } = createComponent();
+    const cards = fixture.nativeElement.querySelectorAll('.card-tile');
+    // First card has an image
+    const heroImg = cards[0].querySelector('.hero-img');
+    expect(heroImg).toBeTruthy();
+    expect(heroImg.getAttribute('src')).toContain('org-1/1/front.webp');
+  });
+
+  it('should render placeholder for cards without images', () => {
+    const { fixture } = createComponent();
+    const cards = fixture.nativeElement.querySelectorAll('.card-tile');
+    // Second card has no images
+    expect(cards[1].querySelector('.hero-img')).toBeFalsy();
+    expect(cards[1].querySelector('.hero-placeholder')).toBeTruthy();
   });
 });

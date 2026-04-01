@@ -92,7 +92,10 @@ describe('InventoryService', () => {
       expect(
         (supabaseMock['client'] as Record<string, ReturnType<typeof vi.fn>>)['from'],
       ).toHaveBeenCalledWith('inventory');
-      expect(queryChain['select']).toHaveBeenCalledWith('*', { count: 'exact' });
+      expect(queryChain['select']).toHaveBeenCalledWith(
+        expect.stringContaining('images:inventory_images'),
+        { count: 'exact' },
+      );
       expect(queryChain['eq']).toHaveBeenCalledWith('organization_id', 'org-1');
       expect(queryChain['is']).toHaveBeenCalledWith('deleted_at', null);
       expect(queryChain['order']).toHaveBeenCalledWith('created_at', { ascending: false });

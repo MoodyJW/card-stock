@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, computed } from '@angular/core';
 import { AsyncPipe } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
@@ -57,7 +57,6 @@ export class CardFormDialogComponent {
   private readonly imageService = inject(ImageService);
 
   readonly loading = signal(false);
-  readonly uploadingImages = signal(false);
 
   // Add Mode Signals
   readonly newFrontImage = signal<File | null>(null);
@@ -65,6 +64,12 @@ export class CardFormDialogComponent {
 
   // Edit Mode Signals
   readonly existingImages = signal<InventoryImage[]>([]);
+  readonly deletedImages = signal<InventoryImage[]>([]);
+  readonly pendingPrimaryId = signal<string | null>(null);
+
+  readonly activeImages = computed(() => {
+    return this.existingImages().filter(img => !this.deletedImages().some(d => d.id === img.id));
+  });
 
   readonly form = this.fb.nonNullable.group({
     card_name: ['', [Validators.required]],
@@ -174,45 +179,30 @@ export class CardFormDialogComponent {
     this.newBackImage.set(null);
   }
 
-  // Handlers for Edit Mode
-  async onEditAddImage(file: File): Promise<void> {
-    const cardId = this.data.card?.id;
-    if (!cardId) return;
-
-    this.uploadingImages.set(true);
-    // Determine if this should be the primary image (true if no images exist yet)
-    const isPrimary = this.existingImages().length === 0;
-
-    const image = await this.imageService.uploadImage(cardId, file, isPrimary);
-    if (image) {
-      this.existingImages.update(imgs => [...imgs, image]);
-      this.notify.success('Image uploaded');
+  // Handlers for Edit Mode (now deferred like Add mode)
+  onEditAddImage(file: File): void {
+    if (!this.newFrontImage()) {
+      this.newFrontImage.set(file);
+    } else if (!this.newBackImage()) {
+      this.newBackImage.set(file);
     }
-    this.uploadingImages.set(false);
   }
 
-  async onEditDeleteImage(image: InventoryImage): Promise<void> {
-    if (!confirm('Are you sure you want to delete this image?')) return;
-
-    this.uploadingImages.set(true);
-    const success = await this.imageService.deleteImage(image);
-    if (success) {
-      this.existingImages.update(imgs => imgs.filter(i => i.id !== image.id));
-      this.notify.info('Image removed');
+  onEditDeleteImage(image: InventoryImage): void {
+    this.deletedImages.update(imgs => [...imgs, image]);
+    // If we delete the pending primary, revert it
+    if (this.pendingPrimaryId() === image.id) {
+      this.pendingPrimaryId.set(null);
     }
-    this.uploadingImages.set(false);
   }
 
-  async onEditSetPrimary(image: InventoryImage): Promise<void> {
-    const cardId = this.data.card?.id;
-    if (!cardId || image.is_primary) return;
+  onEditSetPrimary(image: InventoryImage): void {
+    this.pendingPrimaryId.set(image.id);
+  }
 
-    const success = await this.imageService.setAsPrimary(image.id, cardId);
-    if (success) {
-      // Re-fetch or manually update local state
-      this.existingImages.update(imgs => imgs.map(i => ({ ...i, is_primary: i.id === image.id })));
-      this.notify.success('Primary image updated');
-    }
+  isPendingPrimary(img: InventoryImage): boolean {
+    if (this.pendingPrimaryId()) return img.id === this.pendingPrimaryId();
+    return img.is_primary;
   }
 
   get title(): string {
@@ -265,27 +255,33 @@ export class CardFormDialogComponent {
         this.loading.set(false);
         return;
       }
+
+      // Process deferred image updates
+      const oldImages = this.existingImages();
+      for (const img of this.deletedImages()) {
+        await this.imageService.deleteImage(img);
+      }
+
+      const activeCount = oldImages.length - this.deletedImages().length;
+      await this.uploadNewImages(cardId, activeCount === 0);
+
+      const pId = this.pendingPrimaryId();
+      if (pId && !this.deletedImages().some(i => i.id === pId)) {
+        await this.imageService.setAsPrimary(pId, cardId);
+      }
+
       this.notify.success('Card updated successfully');
       this.dialogRef.close(data);
     }
   }
 
-  private async uploadNewImages(cardId: string): Promise<void> {
-    let errCount = 0;
-
+  private async uploadNewImages(cardId: string, forcePrimary = true): Promise<void> {
     if (this.newFrontImage()) {
-      const res = await this.imageService.uploadImage(cardId, this.newFrontImage()!, true);
-      if (!res) errCount++;
+      await this.imageService.uploadImage(cardId, this.newFrontImage()!, forcePrimary);
+      forcePrimary = false; // subsequent uploads aren't forced to be primary
     }
     if (this.newBackImage()) {
-      // Set to true if front wasn't uploaded
-      const isPrimary = !this.newFrontImage();
-      const res = await this.imageService.uploadImage(cardId, this.newBackImage()!, isPrimary);
-      if (!res) errCount++;
-    }
-
-    if (errCount > 0) {
-      this.notify.info('Card created but some images failed to upload. You can add them later.');
+      await this.imageService.uploadImage(cardId, this.newBackImage()!, forcePrimary);
     }
   }
 

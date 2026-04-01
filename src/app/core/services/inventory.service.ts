@@ -3,6 +3,7 @@ import { SupabaseService } from './supabase.service';
 import { ShopContextService } from './shop-context.service';
 import {
   InventoryItem,
+  InventoryItemWithImages,
   CreateInventoryItem,
   InventoryFilters,
   MarkSoldParams,
@@ -16,7 +17,7 @@ export class InventoryService {
   private readonly shopContext = inject(ShopContextService);
 
   // State signals
-  private readonly _items = signal<InventoryItem[]>([]);
+  private readonly _items = signal<InventoryItemWithImages[]>([]);
   private readonly _loading = signal(false);
   private readonly _totalCount = signal(0);
   private readonly _filters = signal<InventoryFilters>({});
@@ -65,7 +66,15 @@ export class InventoryService {
 
     let query = this.supabase.client
       .from('inventory')
-      .select('*', { count: 'exact' })
+      .select(
+        `
+        *,
+        images:inventory_images (
+          id, storage_path, is_primary
+        )
+      `,
+        { count: 'exact' },
+      )
       .eq('organization_id', orgId)
       .is('deleted_at', null)
       .order(this._sortColumn(), { ascending: this._sortDirection() === 'asc' });
@@ -88,7 +97,7 @@ export class InventoryService {
       return;
     }
 
-    this._items.set((data as InventoryItem[]) ?? []);
+    this._items.set((data as InventoryItemWithImages[]) ?? []);
     this._totalCount.set(count ?? 0);
     this._loading.set(false);
   }

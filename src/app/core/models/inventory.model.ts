@@ -34,6 +34,16 @@ export interface InventoryItem {
   deleted_at?: string;
 }
 
+export interface InventoryImageRelation {
+  id: string;
+  storage_path: string;
+  is_primary: boolean;
+}
+
+export interface InventoryItemWithImages extends InventoryItem {
+  images?: InventoryImageRelation[];
+}
+
 export interface CreateInventoryItem {
   card_name: string;
   set_name?: string;

@@ -6,6 +6,9 @@ import {
   Output,
   ViewChild,
   inject,
+  OnChanges,
+  OnDestroy,
+  SimpleChanges,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
@@ -29,7 +32,7 @@ import { NotificationService } from '../../../core/services/notification.service
   templateUrl: './image-upload-slot.component.html',
   styleUrl: './image-upload-slot.component.scss',
 })
-export class ImageUploadSlotComponent {
+export class ImageUploadSlotComponent implements OnChanges, OnDestroy {
   @Input() image: InventoryImage | null = null;
   @Input() previewFile: File | null = null;
   @Input() isPrimary = false;
@@ -45,14 +48,35 @@ export class ImageUploadSlotComponent {
   private readonly imageService = inject(ImageService);
   private readonly notify = inject(NotificationService);
 
-  get displayUrl(): string | null {
+  displayUrl: string | null = null;
+  private objectUrl: string | null = null;
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['previewFile'] || changes['image']) {
+      this.updateDisplayUrl();
+    }
+  }
+
+  ngOnDestroy(): void {
+    if (this.objectUrl) {
+      URL.revokeObjectURL(this.objectUrl);
+    }
+  }
+
+  private updateDisplayUrl(): void {
+    if (this.objectUrl) {
+      URL.revokeObjectURL(this.objectUrl);
+      this.objectUrl = null;
+    }
+
     if (this.previewFile) {
-      return URL.createObjectURL(this.previewFile);
+      this.objectUrl = URL.createObjectURL(this.previewFile);
+      this.displayUrl = this.objectUrl;
+    } else if (this.image) {
+      this.displayUrl = this.imageService.getPublicUrl(this.image.storage_path);
+    } else {
+      this.displayUrl = null;
     }
-    if (this.image) {
-      return this.imageService.getPublicUrl(this.image.storage_path);
-    }
-    return null;
   }
 
   triggerFileInput(): void {

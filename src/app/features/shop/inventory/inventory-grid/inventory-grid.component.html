@@ -5,6 +5,17 @@
       (click)="cardClicked.emit(item)"
       [class.is-sold]="item.status === 'sold'"
     >
+      <!-- Hero Image -->
+      <div class="card-hero">
+        @if (getPrimaryImageUrl(item); as imgUrl) {
+          <img [src]="imgUrl" [alt]="item.card_name" class="hero-img" loading="lazy" />
+        } @else {
+          <div class="hero-placeholder">
+            <mat-icon>style</mat-icon>
+          </div>
+        }
+      </div>
+
       <!-- Status chip -->
       <span class="status-chip" [attr.data-status]="item.status">
         {{ item.status | titlecase }}

@@ -2,11 +2,13 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { signal } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
+import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { InventoryListComponent } from './inventory-list.component';
 import { InventoryService } from '../../../../core/services/inventory.service';
-import { InventoryItem } from '../../../../core/models/inventory.model';
+import { ImageService } from '../../../../core/services/image.service';
+import { InventoryItemWithImages } from '../../../../core/models/inventory.model';
 
-const mockItems: InventoryItem[] = [
+const mockItems: InventoryItemWithImages[] = [
   {
     id: '1',
     organization_id: 'org-1',
@@ -26,6 +28,7 @@ const mockItems: InventoryItem[] = [
     notes: '',
     created_at: '2026-01-01',
     updated_at: '2026-01-01',
+    images: [{ id: 'img-1', storage_path: 'org-1/1/front.webp', is_primary: true }],
   },
   {
     id: '2',
@@ -37,6 +40,7 @@ const mockItems: InventoryItem[] = [
     status: 'sold',
     created_at: '2026-01-02',
     updated_at: '2026-01-02',
+    images: [],
   },
 ];
 
@@ -44,10 +48,11 @@ describe('InventoryListComponent', () => {
   let component: InventoryListComponent;
   let fixture: ComponentFixture<InventoryListComponent>;
   let inventoryServiceMock: Record<string, unknown>;
+  let imageServiceMock: Record<string, unknown>;
 
   beforeEach(async () => {
     inventoryServiceMock = {
-      items: signal<InventoryItem[]>([]),
+      items: signal<InventoryItemWithImages[]>([]),
       loading: signal(false),
       totalCount: signal(0),
       page: signal(0),
@@ -66,10 +71,16 @@ describe('InventoryListComponent', () => {
       toggleReserved: vi.fn().mockResolvedValue({ error: null }),
     };
 
+    imageServiceMock = {
+      getPublicUrl: vi.fn((path: string) => `https://cdn.test/${path}`),
+    };
+
     await TestBed.configureTestingModule({
       imports: [InventoryListComponent],
       providers: [
+        provideNoopAnimations(),
         { provide: InventoryService, useValue: inventoryServiceMock },
+        { provide: ImageService, useValue: imageServiceMock },
         {
           provide: ActivatedRoute,
           useValue: { parent: {} },
@@ -100,7 +111,9 @@ describe('InventoryListComponent', () => {
   });
 
   it('should render table with mock data', () => {
-    (inventoryServiceMock['items'] as ReturnType<typeof signal<InventoryItem[]>>).set(mockItems);
+    (inventoryServiceMock['items'] as ReturnType<typeof signal<InventoryItemWithImages[]>>).set(
+      mockItems,
+    );
     (inventoryServiceMock['totalCount'] as ReturnType<typeof signal<number>>).set(2);
     fixture.detectChanges();
 
@@ -109,12 +122,39 @@ describe('InventoryListComponent', () => {
   });
 
   it('should display card name in bold', () => {
-    (inventoryServiceMock['items'] as ReturnType<typeof signal<InventoryItem[]>>).set(mockItems);
+    (inventoryServiceMock['items'] as ReturnType<typeof signal<InventoryItemWithImages[]>>).set(
+      mockItems,
+    );
     (inventoryServiceMock['totalCount'] as ReturnType<typeof signal<number>>).set(2);
     fixture.detectChanges();
 
     const nameCell = fixture.nativeElement.querySelector('.cell-card-name');
     expect(nameCell.textContent).toContain('Charizard');
+  });
+
+  it('should render thumbnail if image exists', () => {
+    (inventoryServiceMock['items'] as ReturnType<typeof signal<InventoryItemWithImages[]>>).set(
+      mockItems,
+    );
+    (inventoryServiceMock['totalCount'] as ReturnType<typeof signal<number>>).set(2);
+    fixture.detectChanges();
+
+    const thumbs = fixture.nativeElement.querySelectorAll('.cell-thumb');
+    const firstImg = thumbs[0].querySelector('img');
+    expect(firstImg).toBeTruthy();
+    expect(firstImg.getAttribute('src')).toContain('org-1/1/front.webp');
+  });
+
+  it('should render placeholder if no image exists', () => {
+    (inventoryServiceMock['items'] as ReturnType<typeof signal<InventoryItemWithImages[]>>).set(
+      mockItems,
+    );
+    (inventoryServiceMock['totalCount'] as ReturnType<typeof signal<number>>).set(2);
+    fixture.detectChanges();
+
+    const thumbs = fixture.nativeElement.querySelectorAll('.cell-thumb');
+    const secondPlaceholder = thumbs[1].querySelector('.thumb-placeholder');
+    expect(secondPlaceholder).toBeTruthy();
   });
 
   it('should call setSort when sort changes', () => {
@@ -138,7 +178,9 @@ describe('InventoryListComponent', () => {
   });
 
   it('should show paginator when items exist', () => {
-    (inventoryServiceMock['items'] as ReturnType<typeof signal<InventoryItem[]>>).set(mockItems);
+    (inventoryServiceMock['items'] as ReturnType<typeof signal<InventoryItemWithImages[]>>).set(
+      mockItems,
+    );
     (inventoryServiceMock['totalCount'] as ReturnType<typeof signal<number>>).set(2);
     fixture.detectChanges();
 

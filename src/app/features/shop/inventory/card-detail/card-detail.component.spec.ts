@@ -70,6 +70,7 @@ async function setup(
     sortColumn: signal('created_at'),
     sortDirection: signal('desc'),
     distinctSetNames: signal<string[]>([]),
+    loadInventory: vi.fn(),
   };
 
   const notifyMock = {

@@ -37,6 +37,10 @@ import {
   MarkSoldDialogComponent,
   MarkSoldDialogData,
 } from '../mark-sold-dialog/mark-sold-dialog.component';
+import {
+  ReserveCardDialogComponent,
+  ReserveCardDialogData,
+} from '../reserve-card-dialog/reserve-card-dialog.component';
 
 @Component({
   selector: 'app-inventory-list',
@@ -208,14 +212,11 @@ export class InventoryListComponent {
     });
   }
 
-  async toggleReserved(item: InventoryItem): Promise<void> {
-    const { error } = await this.inventoryService.toggleReserved(item);
-    if (error) {
-      this.notify.error('Failed to update status');
-    } else {
-      const label = item.status === 'reserved' ? 'available' : 'reserved';
-      this.notify.success(`Card marked as ${label}`);
-    }
+  openReserveDialog(item: InventoryItem): void {
+    this.dialog.open(ReserveCardDialogComponent, {
+      data: { card: item } satisfies ReserveCardDialogData,
+      ...this.dialogConfig,
+    });
   }
 
   async deleteCard(item: InventoryItem): Promise<void> {

@@ -68,7 +68,8 @@ describe('InventoryListComponent', () => {
       getDistinctSetNames: vi.fn(),
       softDeleteCard: vi.fn().mockResolvedValue({ error: null }),
       restoreDeletedCard: vi.fn().mockResolvedValue({ error: null }),
-      toggleReserved: vi.fn().mockResolvedValue({ error: null }),
+      reserveCard: vi.fn().mockResolvedValue({ error: null }),
+      unreserveCard: vi.fn().mockResolvedValue({ error: null }),
     };
 
     imageServiceMock = {

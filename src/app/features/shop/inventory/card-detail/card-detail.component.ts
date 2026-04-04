@@ -26,6 +26,10 @@ import {
   ImageLightboxDialogComponent,
   LightboxDialogData,
 } from '../image-lightbox-dialog/image-lightbox-dialog.component';
+import {
+  ReserveCardDialogComponent,
+  ReserveCardDialogData,
+} from '../reserve-card-dialog/reserve-card-dialog.component';
 
 @Component({
   selector: 'app-card-detail',
@@ -184,6 +188,22 @@ export class CardDetailComponent implements OnInit {
 
     const dialogRef = this.dialog.open(MarkSoldDialogComponent, {
       data: { card } satisfies MarkSoldDialogData,
+      ...this.getDialogConfig(),
+    });
+
+    dialogRef.afterClosed().subscribe(async (result: unknown) => {
+      if (result) {
+        await this.loadCard(card.id);
+      }
+    });
+  }
+
+  openReserve(): void {
+    const card = this.card();
+    if (!card) return;
+
+    const dialogRef = this.dialog.open(ReserveCardDialogComponent, {
+      data: { card } satisfies ReserveCardDialogData,
       ...this.getDialogConfig(),
     });
 

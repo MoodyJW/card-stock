@@ -32,6 +32,13 @@
         Edit
       </button>
 
+      @if (card.status !== 'sold') {
+        <button mat-stroked-button (click)="openReserve()" aria-label="Reserve card">
+          <mat-icon>{{ card.status === 'reserved' ? 'lock_open' : 'lock' }}</mat-icon>
+          {{ card.status === 'reserved' ? 'Unreserve' : 'Reserve' }}
+        </button>
+      }
+
       @if (card.status === 'available') {
         <button mat-stroked-button (click)="openSell()" aria-label="Mark as sold">
           <mat-icon>sell</mat-icon>

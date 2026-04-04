@@ -218,20 +218,20 @@
           (deleteClicked)="deleteCard($event)"
         ></app-inventory-grid>
       }
-
-      <!-- Paginator -->
-      @if (displayMode() === 'table') {
-        <mat-paginator
-          [length]="totalCount()"
-          [pageSize]="pageSize()"
-          [pageIndex]="page()"
-          [pageSizeOptions]="pageSizeOptions"
-          (page)="onPageChange($event)"
-          showFirstLastButtons
-        ></mat-paginator>
-      }
     }
   </div>
+
+  <!-- Paginator -->
+  @if (items().length > 0) {
+    <mat-paginator
+      [length]="totalCount()"
+      [pageSize]="pageSize()"
+      [pageIndex]="page()"
+      [pageSizeOptions]="pageSizeOptions"
+      (page)="onPageChange($event)"
+      showFirstLastButtons
+    ></mat-paginator>
+  }
 
   <!-- Mobile FAB -->
   @if (isMobile().matches) {

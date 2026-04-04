@@ -4,10 +4,10 @@
 }
 
 .header {
-  margin-bottom: 2rem;
+  margin-bottom: 1rem;
 
   h1 {
-    margin-bottom: 0.5rem;
+    margin: 0 0 0.5rem 0;
     color: var(--mat-sys-on-background);
   }
 
@@ -20,7 +20,7 @@
 .content-grid {
   display: flex;
   flex-direction: column;
-  gap: 2rem;
+  gap: 1rem;
 }
 
 .invite-card {

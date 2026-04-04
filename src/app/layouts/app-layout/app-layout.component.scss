@@ -29,6 +29,12 @@
   border-right: 1px solid rgba(255, 255, 255, 0.1);
   padding-top: 20px;
 
+  mat-nav-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
   .mat-drawer-inner-container {
     background: transparent;
   }
@@ -38,13 +44,20 @@
   padding: 12px;
   display: flex;
   flex-direction: column;
-  overflow-y: auto;
+  overflow: hidden;
   height: 100%;
   box-sizing: border-box;
 
   &.has-bottom-bar {
     padding-bottom: calc(80px + env(safe-area-inset-bottom));
   }
+}
+
+.page-outer {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  position: relative;
 }
 
 @media (max-width: 767px) {

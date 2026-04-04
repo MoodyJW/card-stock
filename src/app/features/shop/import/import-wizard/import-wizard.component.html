@@ -68,110 +68,115 @@
     <mat-step [completed]="mappingComplete()" label="Map Columns">
       <div class="step-content">
         @if (parsedData()) {
-          <!-- Sheet selector -->
-          @if (hasMultipleSheets()) {
-            <mat-form-field class="sheet-selector" appearance="outline">
-              <mat-label>Select Sheet</mat-label>
-              <mat-select [value]="selectedSheet()" (selectionChange)="changeSheet($event.value)">
-                @for (name of parsedData()!.sheetNames; track name; let i = $index) {
-                  <mat-option [value]="i">{{ name }}</mat-option>
-                }
-              </mat-select>
-            </mat-form-field>
-          }
+          <div class="step-scroll-area">
+            <!-- Sheet selector -->
+            @if (hasMultipleSheets()) {
+              <mat-form-field class="sheet-selector" appearance="outline">
+                <mat-label>Select Sheet</mat-label>
+                <mat-select [value]="selectedSheet()" (selectionChange)="changeSheet($event.value)">
+                  @for (name of parsedData()!.sheetNames; track name; let i = $index) {
+                    <mat-option [value]="i">{{ name }}</mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
+            }
 
-          @if (!cardNameMapped()) {
-            <div class="warning-message">
-              <mat-icon>warning</mat-icon>
-              <span>Card Name is required. Please map a column to Card Name.</span>
-            </div>
-          }
+            @if (!cardNameMapped()) {
+              <div class="warning-message">
+                <mat-icon>warning</mat-icon>
+                <span>Card Name is required. Please map a column to Card Name.</span>
+              </div>
+            }
 
-          <!-- Mapping table -->
-          <div class="mapping-table-wrapper">
-            <table mat-table [dataSource]="columnMappings()" class="mapping-table">
-              <!-- Source Header -->
-              <ng-container matColumnDef="sourceHeader">
-                <th mat-header-cell *matHeaderCellDef>Spreadsheet Column</th>
-                <td mat-cell *matCellDef="let mapping">
-                  <span class="source-header">{{ mapping.sourceHeader }}</span>
-                </td>
-              </ng-container>
+            <!-- Mapping table -->
+            <div class="mapping-table-wrapper">
+              <table mat-table [dataSource]="columnMappings()" class="mapping-table">
+                <!-- Source Header -->
+                <ng-container matColumnDef="sourceHeader">
+                  <th mat-header-cell *matHeaderCellDef>Spreadsheet Column</th>
+                  <td mat-cell *matCellDef="let mapping">
+                    <span class="source-header">{{ mapping.sourceHeader }}</span>
+                  </td>
+                </ng-container>
 
-              <!-- Target Field -->
-              <ng-container matColumnDef="targetField">
-                <th mat-header-cell *matHeaderCellDef>Maps To</th>
-                <td mat-cell *matCellDef="let mapping">
-                  <mat-form-field appearance="outline" class="mapping-select">
-                    <mat-select
-                      [value]="mapping.targetField"
-                      (selectionChange)="updateMapping(mapping.sourceIndex, $event.value)"
+                <!-- Target Field -->
+                <ng-container matColumnDef="targetField">
+                  <th mat-header-cell *matHeaderCellDef>Maps To</th>
+                  <td mat-cell *matCellDef="let mapping">
+                    <mat-form-field appearance="outline" class="mapping-select">
+                      <mat-select
+                        [value]="mapping.targetField"
+                        (selectionChange)="updateMapping(mapping.sourceIndex, $event.value)"
+                      >
+                        @for (
+                          option of getAvailableFields(mapping.sourceIndex);
+                          track option.value
+                        ) {
+                          <mat-option [value]="option.value" [disabled]="option.disabled">
+                            {{ option.label }}
+                          </mat-option>
+                        }
+                      </mat-select>
+                    </mat-form-field>
+                  </td>
+                </ng-container>
+
+                <!-- Confidence -->
+                <ng-container matColumnDef="confidence">
+                  <th mat-header-cell *matHeaderCellDef>Match</th>
+                  <td mat-cell *matCellDef="let mapping">
+                    <mat-icon
+                      class="confidence-icon"
+                      [class.exact]="mapping.confidence === 'exact'"
+                      [class.fuzzy]="mapping.confidence === 'fuzzy'"
+                      [class.unmapped]="mapping.confidence === 'unmapped'"
+                      [matTooltip]="getConfidenceTooltip(mapping.confidence)"
                     >
-                      @for (option of getAvailableFields(mapping.sourceIndex); track option.value) {
-                        <mat-option [value]="option.value" [disabled]="option.disabled">
-                          {{ option.label }}
-                        </mat-option>
-                      }
-                    </mat-select>
-                  </mat-form-field>
-                </td>
-              </ng-container>
+                      {{ getConfidenceIcon(mapping.confidence) }}
+                    </mat-icon>
+                  </td>
+                </ng-container>
 
-              <!-- Confidence -->
-              <ng-container matColumnDef="confidence">
-                <th mat-header-cell *matHeaderCellDef>Match</th>
-                <td mat-cell *matCellDef="let mapping">
-                  <mat-icon
-                    class="confidence-icon"
-                    [class.exact]="mapping.confidence === 'exact'"
-                    [class.fuzzy]="mapping.confidence === 'fuzzy'"
-                    [class.unmapped]="mapping.confidence === 'unmapped'"
-                    [matTooltip]="getConfidenceTooltip(mapping.confidence)"
-                  >
-                    {{ getConfidenceIcon(mapping.confidence) }}
-                  </mat-icon>
-                </td>
-              </ng-container>
+                <tr
+                  mat-header-row
+                  *matHeaderRowDef="['sourceHeader', 'targetField', 'confidence']"
+                ></tr>
+                <tr
+                  mat-row
+                  *matRowDef="let row; columns: ['sourceHeader', 'targetField', 'confidence']"
+                ></tr>
+              </table>
+            </div>
 
-              <tr
-                mat-header-row
-                *matHeaderRowDef="['sourceHeader', 'targetField', 'confidence']"
-              ></tr>
-              <tr
-                mat-row
-                *matRowDef="let row; columns: ['sourceHeader', 'targetField', 'confidence']"
-              ></tr>
-            </table>
-          </div>
-
-          <!-- Data preview -->
-          @if (previewRows().length > 0) {
-            <div class="preview-section">
-              <h3 class="preview-title">Data Preview (first {{ previewRows().length }} rows)</h3>
-              <div class="preview-table-wrapper">
-                <table class="preview-table">
-                  <thead>
-                    <tr>
-                      @for (mapping of columnMappings(); track mapping.sourceIndex) {
-                        <th>{{ mapping.sourceHeader }}</th>
-                      }
-                    </tr>
-                  </thead>
-                  <tbody>
-                    @for (row of previewRows(); track $index; let rowIdx = $index) {
+            <!-- Data preview -->
+            @if (previewRows().length > 0) {
+              <div class="preview-section">
+                <h3 class="preview-title">Data Preview (first {{ previewRows().length }} rows)</h3>
+                <div class="preview-table-wrapper">
+                  <table class="preview-table">
+                    <thead>
                       <tr>
                         @for (mapping of columnMappings(); track mapping.sourceIndex) {
-                          <td>{{ getCellPreview(rowIdx, mapping.sourceIndex) }}</td>
+                          <th>{{ mapping.sourceHeader }}</th>
                         }
                       </tr>
-                    }
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      @for (row of previewRows(); track $index; let rowIdx = $index) {
+                        <tr>
+                          @for (mapping of columnMappings(); track mapping.sourceIndex) {
+                            <td>{{ getCellPreview(rowIdx, mapping.sourceIndex) }}</td>
+                          }
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
               </div>
-            </div>
-          }
+            }
+          </div>
 
-          <!-- Step actions -->
+          <!-- Step actions — outside scroll area, always visible at bottom -->
           <div class="step-actions">
             <button mat-button matStepperPrevious>Back</button>
             <button mat-flat-button matStepperNext [disabled]="!cardNameMapped()">

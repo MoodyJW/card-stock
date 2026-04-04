@@ -1,12 +1,12 @@
 .desktop-filters {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 12px;
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  padding: 16px;
+  padding: 12px;
   border-radius: 12px;
-  margin-bottom: 24px;
+  margin-bottom: 1rem;
   backdrop-filter: blur(10px);
 }
 

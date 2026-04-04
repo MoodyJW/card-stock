@@ -27,6 +27,10 @@ export interface InventoryItem {
   selling_price?: number;
   status: InventoryStatus;
   notes?: string;
+  reserved_by_name?: string;
+  reserved_by_email?: string;
+  reserved_by_phone?: string;
+  reservation_notes?: string;
   created_at: string;
   created_by?: string;
   updated_at: string;
@@ -66,6 +70,14 @@ export interface InventoryFilters {
   status?: InventoryStatus | null;
   condition?: Condition | null;
   set_name?: string | null;
+}
+
+export interface ReserveCardParams {
+  inventory_id: string;
+  reserved_by_name: string;
+  reserved_by_email?: string;
+  reserved_by_phone?: string;
+  reservation_notes?: string;
 }
 
 export interface MarkSoldParams {

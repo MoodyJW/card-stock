@@ -7,6 +7,7 @@ import {
   CreateInventoryItem,
   InventoryFilters,
   MarkSoldParams,
+  ReserveCardParams,
 } from '../models/inventory.model';
 
 @Injectable({
@@ -290,26 +291,79 @@ export class InventoryService {
     return { data, error };
   }
 
-  async toggleReserved(item: InventoryItem): Promise<{ error: unknown }> {
-    const newStatus = item.status === 'reserved' ? 'available' : 'reserved';
+  async reserveCard(params: ReserveCardParams): Promise<{ error: unknown }> {
+    const {
+      inventory_id,
+      reserved_by_name,
+      reserved_by_email,
+      reserved_by_phone,
+      reservation_notes,
+    } = params;
 
     // Optimistic update
     this._items.update(items =>
       items.map(i =>
-        i.id === item.id ? { ...i, status: newStatus as InventoryItem['status'] } : i,
+        i.id === inventory_id
+          ? {
+              ...i,
+              status: 'reserved' as const,
+              reserved_by_name,
+              reserved_by_email,
+              reserved_by_phone,
+              reservation_notes,
+            }
+          : i,
       ),
     );
 
     const { error } = await this.supabase.client
       .from('inventory')
-      .update({ status: newStatus })
-      .eq('id', item.id);
+      .update({
+        status: 'reserved',
+        reserved_by_name,
+        reserved_by_email: reserved_by_email || null,
+        reserved_by_phone: reserved_by_phone || null,
+        reservation_notes: reservation_notes || null,
+      })
+      .eq('id', inventory_id);
 
     if (error) {
-      // Rollback
-      this._items.update(items =>
-        items.map(i => (i.id === item.id ? { ...i, status: item.status } : i)),
-      );
+      await this.loadInventory();
+    }
+
+    return { error };
+  }
+
+  async unreserveCard(id: string): Promise<{ error: unknown }> {
+    // Optimistic update
+    this._items.update(items =>
+      items.map(i =>
+        i.id === id
+          ? {
+              ...i,
+              status: 'available' as const,
+              reserved_by_name: undefined,
+              reserved_by_email: undefined,
+              reserved_by_phone: undefined,
+              reservation_notes: undefined,
+            }
+          : i,
+      ),
+    );
+
+    const { error } = await this.supabase.client
+      .from('inventory')
+      .update({
+        status: 'available',
+        reserved_by_name: null,
+        reserved_by_email: null,
+        reserved_by_phone: null,
+        reservation_notes: null,
+      })
+      .eq('id', id);
+
+    if (error) {
+      await this.loadInventory();
     }
 
     return { error };

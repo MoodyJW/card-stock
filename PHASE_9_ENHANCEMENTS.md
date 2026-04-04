@@ -5,7 +5,7 @@
 
 ---
 
-## 1. Reserve Card Dialog
+~~## 1. Reserve Card Dialog DONE~~
 
 Currently, reserve/unreserve is a simple toggle. Replace with a dialog that captures:
 

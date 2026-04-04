@@ -181,7 +181,7 @@
                     <span>Edit</span>
                   </button>
                   @if (item.status !== 'sold') {
-                    <button mat-menu-item (click)="toggleReserved(item)">
+                    <button mat-menu-item (click)="openReserveDialog(item)">
                       <mat-icon>{{ item.status === 'reserved' ? 'lock_open' : 'lock' }}</mat-icon>
                       <span>{{ item.status === 'reserved' ? 'Unreserve' : 'Reserve' }}</span>
                     </button>
@@ -214,7 +214,7 @@
           [items]="items()"
           (cardClicked)="navigateToCard($event)"
           (sellClicked)="openSellDialog($event)"
-          (reserveClicked)="toggleReserved($event)"
+          (reserveClicked)="openReserveDialog($event)"
           (deleteClicked)="deleteCard($event)"
         ></app-inventory-grid>
       }

@@ -1,0 +1,81 @@
+<h2 mat-dialog-title>{{ isReserved ? 'Reservation Details' : 'Reserve Card' }}</h2>
+
+<mat-dialog-content>
+  <!-- Card summary -->
+  <section class="card-summary">
+    <h3 class="card-name">{{ card.card_name }}</h3>
+    @if (card.set_name) {
+      <p class="card-set">
+        {{ card.set_name }}
+        @if (card.card_number) {
+          <span class="card-number">#{{ card.card_number }}</span>
+        }
+      </p>
+    }
+  </section>
+
+  <form [formGroup]="form" id="reserve-form" (ngSubmit)="onSubmit()">
+    <mat-form-field appearance="outline">
+      <mat-label>Reserver Name</mat-label>
+      <input
+        matInput
+        formControlName="reserved_by_name"
+        placeholder="Who is reserving this card?"
+      />
+      @if (form.controls.reserved_by_name.hasError('required')) {
+        <mat-error>Name is required</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Email</mat-label>
+      <input
+        matInput
+        type="email"
+        formControlName="reserved_by_email"
+        placeholder="contact@example.com"
+      />
+      @if (form.controls.reserved_by_email.hasError('email')) {
+        <mat-error>Enter a valid email address</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Phone</mat-label>
+      <input matInput type="tel" formControlName="reserved_by_phone" placeholder="(555) 123-4567" />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Notes</mat-label>
+      <textarea
+        matInput
+        formControlName="reservation_notes"
+        rows="3"
+        placeholder="e.g. picking up Saturday, waiting on paycheck..."
+      ></textarea>
+    </mat-form-field>
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  @if (isReserved) {
+    <button mat-button color="warn" (click)="onUnreserve()" [disabled]="loading()">
+      <mat-icon>lock_open</mat-icon>
+      Unreserve
+    </button>
+  }
+  <button mat-button mat-dialog-close [disabled]="loading()">Cancel</button>
+  <button
+    mat-flat-button
+    color="primary"
+    type="submit"
+    form="reserve-form"
+    [disabled]="loading() || form.invalid"
+  >
+    @if (loading()) {
+      <mat-spinner diameter="20"></mat-spinner>
+    } @else {
+      {{ isReserved ? 'Update' : 'Reserve' }}
+    }
+  </button>
+</mat-dialog-actions>

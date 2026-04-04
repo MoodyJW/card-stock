@@ -1,0 +1,28 @@
+.card-summary {
+  margin-bottom: 16px;
+  padding: 12px 16px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.card-name {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.card-set {
+  margin: 4px 0 0;
+  font-size: 0.85rem;
+  color: var(--mat-sys-on-surface-variant);
+
+  .card-number {
+    margin-left: 4px;
+    opacity: 0.7;
+  }
+}
+
+mat-form-field {
+  width: 100%;
+}

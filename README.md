@@ -48,6 +48,8 @@ npx supabase start
 
 This starts local PostgreSQL, Auth, and Studio. Access Studio at `http://localhost:54323`.
 
+> **After pulling new migrations:** If Supabase is already running and new migration files were added (e.g. from a branch merge), run `npx supabase db reset` to tear down and rebuild the local database with all migrations applied. This **wipes local data** — export anything you need first.
+
 ### 3. Start the dev server
 
 ```bash

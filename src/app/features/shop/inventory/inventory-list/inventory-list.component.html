@@ -102,7 +102,12 @@
             <!-- Card Name -->
             <ng-container matColumnDef="card_name">
               <th mat-header-cell *matHeaderCellDef mat-sort-header>Card Name</th>
-              <td mat-cell *matCellDef="let item" class="cell-card-name">{{ item.card_name }}</td>
+              <td mat-cell *matCellDef="let item" class="cell-card-name">
+                {{ item.card_name }}
+                @if (item.is_foil) {
+                  <mat-icon class="foil-icon">auto_awesome</mat-icon>
+                }
+              </td>
             </ng-container>
 
             <!-- Set -->

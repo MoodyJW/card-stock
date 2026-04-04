@@ -1,9 +1,22 @@
 @use 'theme/utilities' as *;
 
+:host {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
 .inventory-container {
   max-width: 1400px;
   margin: 0 auto;
   width: 100%;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 // Header
@@ -11,9 +24,10 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 24px;
+  margin-bottom: 1rem;
   gap: 16px;
   flex-wrap: wrap;
+  flex-shrink: 0;
 
   h1 {
     margin: 0;
@@ -44,10 +58,18 @@
   color: var(--mat-sys-on-primary);
 }
 
+app-inventory-filter-bar {
+  flex-shrink: 0;
+}
+
 // Loading
 .loading-wrapper {
   position: relative;
-  min-height: 400px;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 
   &.is-loading {
     opacity: 0.7;
@@ -102,7 +124,10 @@
 
 // Table
 .table-wrapper {
+  flex: 1;
+  min-height: 0;
   overflow-x: auto;
+  overflow-y: auto;
   @include glass-surface;
   border-radius: 12px;
 
@@ -234,7 +259,7 @@
 // Paginator
 mat-paginator {
   background: transparent;
-  margin-top: 8px;
+  flex-shrink: 0;
 }
 
 // Mobile FAB

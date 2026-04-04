@@ -107,6 +107,36 @@ body {
   }
 }
 
+// Stepper layout overrides — allow content area to fill available height
+// Angular Material sets flex-grow: 1 on the header container, starving the content.
+.import-stepper {
+  .mat-horizontal-stepper-wrapper {
+    flex: 1;
+    min-height: 0;
+  }
+
+  .mat-horizontal-stepper-header-container {
+    flex-grow: 0;
+  }
+
+  .mat-horizontal-content-container {
+    flex: 1;
+    min-height: 0;
+    overflow: hidden !important;
+    display: flex;
+    flex-direction: column;
+  }
+
+  // Active step panel fills the content container and becomes a flex column
+  .mat-horizontal-stepper-content.mat-horizontal-stepper-content-current {
+    flex: 1;
+    min-height: 0;
+    display: flex !important;
+    flex-direction: column;
+    overflow: hidden !important;
+  }
+}
+
 // Lightbox dialog — full-viewport, no chrome
 .lightbox-dialog {
   .mat-mdc-dialog-container .mdc-dialog__surface {

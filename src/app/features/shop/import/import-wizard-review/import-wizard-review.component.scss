@@ -1,11 +1,26 @@
 @use 'theme/utilities' as *;
 
+:host {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.step-scroll-area {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding-bottom: 8px;
+}
+
 // Step actions
 .step-actions {
   display: flex;
   justify-content: flex-end;
   gap: 12px;
-  margin-top: 24px;
+  margin-top: 16px;
   padding-top: 16px;
   border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
@@ -53,8 +68,6 @@
   @include glass-surface;
   border-radius: 12px;
   overflow-x: auto;
-  max-height: 500px;
-  overflow-y: auto;
 }
 
 .validation-table {
